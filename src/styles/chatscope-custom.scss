@@ -1,0 +1,22 @@
+/* ── 0. СВОИ ПЕРЕМЕННЫЕ (до импорта темы) ───────────────────────── */
+
+/* Убираем дефолтный “голубой” bubble */
+$cs-color-bg-message-incoming : transparent;
+$cs-color-bg-message-outgoing : transparent;
+
+/* Кружочки-тени bubble тоже в ноль */
+$cs-color-shadow-message      : transparent;
+
+/* Обнуляем паддинги и скругления, чтобы рулить ими Tailwind-классами */
+$cs-message-padding-x         : 0;
+$cs-message-padding-y         : 0;
+$cs-border-radius-message     : 0;
+
+/* ── 1. Подключаем саму тему ────────────────────────────────────── */
+@import "@chatscope/chat-ui-kit-styles/themes/default/main.scss";
+
+/* ── 2. Можно сразу добавить свои мелкие правки ─────────────────── */
+/* пример: отключить дату над сообщением */
+.cs-message__sent-time{
+  display:none;
+}

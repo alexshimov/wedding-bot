@@ -1,0 +1,329 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root{ 
+  --accent-from:#e57e36; --accent-to:#e83d6d; 
+  --accent-mid:color-mix(in srgb,var(--accent-from) 50%,var(--accent-to) 50%);
+    /* master colour stops (orange-pink accent) */
+    --glow-1:#ff9851;      /* centre of glow */
+    --glow-2:#ff4c7f;      /* halo edge      */
+  
+    /* easy tweak dials */
+    --glow-strength:.54;   /* 0-.35  → brighter glow */
+    --tex-opacity:.08;     /* 0-.12  → pattern strength */
+}
+
+
+html,body{
+  height:100%; margin:0; color-scheme:dark;
+  font-family:Inter, system-ui, sans-serif;
+  background:#0d0d11;                         /* base charcoal */
+
+  /* 1️⃣ glow layer (top) */
+  background-image:
+    radial-gradient(80% 110% at 50% 28%,
+      color-mix(in srgb,var(--glow-1) calc(var(--glow-strength)*100%), transparent) 0%,
+      color-mix(in srgb,var(--glow-2) calc(var(--glow-strength)*40%), transparent) 60%,
+      transparent 100%
+    );
+
+  background-repeat:no-repeat;
+  background-size:cover;
+  background-attachment:fixed;                /* smooth mobile scroll */
+}
+
+/* 2️⃣ add the SVG pattern via ::before so we can tint & fade it */
+html::before{
+  content:"";
+  position:fixed; inset:0;
+  background:url('/bg/telegram-pattern.svg') center/460px repeat;
+  filter:invert(1) brightness(2);   /* ← превратили чёрный → ярко-белый */
+  opacity:var(--tex-opacity);
+  mix-blend-mode:screen;                      /* brightens dark SVG */
+  pointer-events:none;
+}
+/* ──────────────────────────────────────────────
+   Telegram-style header bar
+   ──────────────────────────────────────────── */
+   .tg-header{
+    position:sticky; top:0; z-index:40;
+    width:100%;
+    height:58px;
+    display:flex; align-items:center;          /* горизонт + вертикаль */
+    justify-content:center;                    /* <-- центрируем строку */
+    padding-inline:1rem;
+    width:calc(100% - 2rem);
+    max-width:32rem;          /* ← ваше новое значение */
+    margin-inline:auto;       /* центрируем bar в окне */ 
+
+    background:rgba(23,25,30,.89);
+    backdrop-filter:blur(14px) saturate(160%);
+    box-shadow:0 4px 10px rgb(0 0 0 / .4);
+  
+    /* скругление ТОЛЬКО снизу */
+    border-bottom-left-radius:1rem;
+    border-bottom-right-radius:1rem;
+
+    font-family: var(--font-title), Inter, system-ui, sans-serif;
+    font-size: 1.15rem;         /* чуть крупнее */
+    letter-spacing: .02em;
+  }
+  
+  /* Убираем верхние скругления, если они где-то проскочили */
+  .tg-header{ border-top-left-radius:0; border-top-right-radius:0; }
+  
+  /* Вкладыш-строка (иконка + текст) */
+  .tg-title{
+    display:flex; align-items:center; gap:.4rem;
+    line-height:1;                   /* чтобы 💍 и текст выровнялись по центру */
+  }
+
+.cs-message-list,                    /* main scroller                       */
+.cs-message-list__scrollWrapper,     /* internal wrapper (v2)               */
+.cs-virtual-list,                    /* react-window virtual list           */
+.cs-virtual-list__item {             /* each row                            */
+  background-color: transparent !important;
+}
+
+.cs-message-input__content-editor-wrapper,
+.cs-message-input__content-editor-container {
+  background-color: transparent !important;
+}
+
+/* .cs-message--incoming .cs-message__content {
+  background-color: transparent !important;
+}   */
+
+/* ---------------- TELEGRAM BUBBLES ---------------- */
+
+.cs-message__content{
+  /* every bubble (in & out) */
+  padding:.5rem .85rem;
+  border-radius:1.25rem;
+  line-height:1.25rem;
+  font-size:.925rem;
+  font-weight:400;
+  position:relative;
+}
+
+/* incoming — dark charcoal */
+.cs-message--incoming .cs-message__content{
+  background:#2a2d34;          /* ≈ Telegram “night” bubble */
+  color:#f1f1f1;
+}
+
+/* outgoing — orange ➜ pink gradient */
+.cs-message--outgoing .cs-message__content{
+  background:linear-gradient(135deg,var(--accent-from) 0%,var(--accent-to) 100%);
+  color:#fff;
+}
+/* kill the little triangular “tails” Chatscope draws */
+.cs-message__content::before{ display:none!important; }
+
+/* quick-reply chips -------------------------------------------------------- */
+.quick-chip{
+  background:linear-gradient(135deg,var(--accent-from) 0%,var(--accent-to) 100%);
+  color:#f1f1f1;
+  border-radius:9999px;
+  padding:.35rem .9rem;
+  font-size:.875rem;
+  transition:background-color .15s;
+}
+.quick-chip:hover{
+  filter:brightness(1.08);
+}
+
+/* typing indicator -------------------------------------------------------- */
+@keyframes dotPulse{
+  0%, 70%, 100%{ transform:scale(1);   opacity:.35; }
+  35%         { transform:scale(1.55); opacity:1;   }
+}
+
+.tg-typing{
+  display:inline-flex;
+  align-items:center;
+  gap:.5rem;
+  padding:.45rem .8rem;
+  background:#1d2027;                 /* тот же цвет, что incoming bubble */
+  border-radius:9999px;
+  margin-bottom:.5rem;                /* лёгкий отступ снизу */
+}
+.tg-dot{
+  width:.35rem; height:.35rem;
+  border-radius:9999px;
+  background:var(--accent-from);
+  animation:dotPulse 1.2s infinite ease-in-out;
+}
+.tg-dot:nth-child(2){ background:var(--accent-mid); animation-delay:.2s; }
+.tg-dot:nth-child(3){ background:var(--accent-to); animation-delay:.4s; }
+
+/* =====================================================
+   Telegram input bar (dark + pink accent)
+   =================================================== */
+   .tg-input{
+    position:relative;
+    background:#2a2d34 !important;          /* charcoal pill */
+    border:none    !important;
+    border-radius:1.6rem !important;
+    padding-right:3.2rem !important;        /* room for arrow */
+    color:#f1f1f1  !important;
+  }
+  
+  /* editable field ------------------------------------ */
+  .tg-input .cs-message-input__content-editor{
+    background:transparent !important;      /* let the pill show through */
+    border:none      !important;
+    padding:.55rem 1rem !important;
+    color:#f1f1f1    !important;
+    border-radius:1.25rem !important;
+    line-height:1.25rem;
+  }
+  .tg-input .cs-message-input__content-editor::placeholder{
+    color:#62666e !important;
+  }
+  
+  /* send-arrow side block ------------------------------ */
+  .tg-input .cs-message-input__tools{
+    position:absolute; top:0; right:0; bottom:0;
+    width:3.2rem;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .tg-input .cs-button--send{
+    width:100%; height:100%;
+    border:none !important;
+    border-radius:0 1.6rem 1.6rem 0 !important;  /* only the right half */
+    background:linear-gradient(135deg,var(--accent-from) 0%,var(--accent-to) 100%) !important;
+    color:#fff;
+  }
+  .tg-input .cs-button--send svg{ height:1.1rem; }
+
+/* =====================================================
+   Readable placeholder inside the dark input pill
+   =================================================== */
+   .tg-input .cs-message-input__content-editor:empty::before{
+    content:attr(data-placeholder);   /* Chatscope puts the hint here */
+    color:#8e939b;                   /* lighter grey, Telegram-like  */
+    opacity:.75;                     /* just a bit subdued            */
+    pointer-events:none;             /* keep clicks inside the field  */
+  }
+
+/* ─── Slim + translucent scroll thumb ───────────────────────────── */
+/* Perfect-Scrollbar rails */
+.ps__rail-y{
+  width:3px !important;     /* thinner */
+  right:2px !important;
+}
+.ps__thumb-y{
+  border-radius:4px !important;
+  background:linear-gradient(
+              180deg,
+              rgba(229,126,54,.5),   /* muted orange 70 % */
+              rgba(232,61,109,.5)    /* muted pink   70 % */
+            ) !important;
+}
+
+/* Native WebKit scrollbar */
+.cs-message-list::-webkit-scrollbar{ width:4px; }
+.cs-message-list::-webkit-scrollbar-thumb{
+  border-radius:4px;
+  background:linear-gradient(
+              180deg,
+              rgba(229,126,54,.5),
+              rgba(232,61,109,.5));
+}
+
+/* cancel the top / bottom gaps so content can slide under bars */
+.no-edge-padding{
+  padding-top:0 !important;
+  padding-bottom:0 !important;
+  scroll-padding-top:0 !important;
+  scroll-padding-bottom:0 !important;
+}
+/* optional – delete the tiny virtual-row margins too */
+.no-edge-padding .cs-virtual-list__item:first-child{ margin-top:0 !important; }
+.no-edge-padding .cs-virtual-list__item:last-child { margin-bottom:0 !important; }
+
+.footer-stack{
+  /* float 1 rem above the viewport edge and the iOS home-bar inset        */
+  bottom:calc(env(safe-area-inset-bottom,0px) + 1rem);
+}
+
+.footer-overlay{
+  position:fixed;
+  left:50%;
+  bottom:0;                                   /* в самый низ */
+  transform:translateX(-50%);
+  width:100%;
+  max-width:32rem;                            /* = max-w-md  */
+  pointer-events:none;                        /* клики пропускаем внутрь панели */
+  z-index:50;
+}
+
+/* ───────── панель, которая прячет сообщения ────────── */
+.footer-panel{
+  pointer-events:auto;                        /* здесь клики уже нужны */
+  padding:1.25rem 1rem calc(env(safe-area-inset-bottom,0px) + 1.25rem);
+  backdrop-filter:blur(14px) saturate(160%);
+  background:rgba(23,25,30,.9);               /* почти Telegram-night */
+  border-top-left-radius:1.25rem;
+  border-top-right-radius:1.25rem;
+  box-shadow:0 -4px 10px rgb(0 0 0 /.4);
+  display:flex;
+  flex-direction:column;
+}
+
+/* — INFO CARD v2 — */
+.cs-message--incoming .cs-message__content:has(.info-card){
+  padding:0 !important;          /* убираем внутренний отступ */
+  background:transparent !important;
+  box-shadow:none !important;
+}
+
+.info-card{
+  position:relative;
+  padding:1.25rem 1.25rem 1.25rem 1.75rem;   /* +0.5rem слева под полоску */
+  background:#2b2e36;
+  border-radius:1rem;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.03),
+             0 4px 8px rgba(0,0,0,.35);
+  font-size:15px; line-height:1.4;
+  color:#e9e9ec;
+}
+
+/* Заголовок */
+.info-head{
+  font:600 1.05rem/1.3 Inter,system-ui,sans-serif;
+  margin-bottom:.6rem;
+}
+
+/* Вертикальная полоса-акцент */
+.info-card::before{
+  content:"";
+  position:absolute;
+  inset-block:10px 10px;      /* сверху/снизу отступ, чтобы не липла к углам */
+  inset-inline-start:0;
+  width:6px;
+  border-radius:4px;
+  background:linear-gradient(180deg,var(--accent-from),var(--accent-to));
+}
+
+/* Картинка (если есть) «уходит» под полоску */
+.info-card > img:first-child{
+  margin-left:-1.75rem;
+  width:calc(100% + 1.75rem);
+  border-top-left-radius:inherit;
+  border-bottom-left-radius:inherit;
+  margin-bottom:.8rem;
+}
+
+/* Ссылки в карточке */
+.info-card a{
+  color:#4e9bff;
+}
+.info-card a:hover{ text-decoration:none; }
+
+.markdown h1   { @apply text-lg font-bold; }
+.markdown h2   { @apply text-base font-bold; }
+.markdown p    { @apply mb-2;              }
+.markdown ul   { @apply list-disc pl-5;    }

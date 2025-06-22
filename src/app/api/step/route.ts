@@ -1,0 +1,65 @@
+// src/app/api/step/route.ts
+import { loadGuests, updateGuest } from "@/lib/sheets";
+import { runFlow, answerUnknown } from "@/lib/runNodeServer";
+import { detectIntent, INTENTS } from "@/lib/intent";
+import { flow } from "@/lib/flow";
+
+let cache: Record<string, any> | null = null;
+
+export async function POST(req: Request) {
+  const body = await req.json();                           // { id?, state, input }
+  const guestId = body.id;                                 // id from query string
+  if (!cache) {
+    const list = await loadGuests();
+    cache = Object.fromEntries(list.map((g) => [g.id, g]));
+  }
+
+  const guest = cache[guestId];
+
+  if (!guest) {
+    return Response.json({
+      state: "not_invited",
+      buttons: [],
+      messages: [
+        {
+          role: "bot", type: "text",
+          text: "Извините, ваш идентификатор не найден в списке гостей 😔"
+        },
+      ],
+    });
+  }
+
+  if (body.input.trim()) {                           // гость что-то ввёл
+    const node = flow[body.state];      // узел, который видит клиент
+    const isButton = node.buttons?.some(
+      b => b.toLowerCase() === body.input.trim().toLowerCase()
+    );
+
+    if (node.inquiry) {
+      console.log('INQU')
+      await updateGuest(guest.rowNumber, body.state, body.input.trim());
+    }
+    else {
+      if (body.input.trim() && !isButton) {
+        const tag = await detectIntent(body.input);
+        const nodeId = INTENTS[tag as Intent];
+
+        console.log("Intent: " + tag)
+
+        if (tag !== "unknown" && flow[nodeId]) {                         // 1) узнали тег
+          const nodeId = INTENTS[tag];
+          const result = await runFlow(nodeId, "", guest); // идём прямо в узел
+          return Response.json(result);
+        } else {
+          const result = await runFlow("unknown", body.input, guest);                                  // 2) не поняли
+          return Response.json(result);
+        }
+      }
+    }
+  }
+
+  /* run normal flow with ctx = guest */
+  const res = await runFlow(body.state, body.input, guest);
+
+  return Response.json(res);
+}
