@@ -6,6 +6,8 @@ import { flow } from "@/lib/flow";
 
 let cache: Record<string, any> | null = null;
 
+console.log("PEM header in prod:", (process.env.GSA_PRIVATE_KEY ?? "").slice(0, 60));
+
 export async function POST(req: Request) {
   const body = await req.json();                           // { id?, state, input }
   const guestId = body.id;                                 // id from query string
