@@ -1,7 +1,7 @@
 // NO "use client" here – this stays a server component
-import ChatClient from "./ChatClient";
+import ChatPage from "./page";
 
-export default function ChatPage({
+export default function ChatPageServer({
   searchParams,
 }: {
   searchParams: { guest?: string; id?: string };
@@ -11,7 +11,7 @@ export default function ChatPage({
   const start    = "greeting";            // your old constant
 
   return (
-    <ChatClient
+    <ChatPage
       guestName={rawName}
       guestId={guestId}
       start={start}
