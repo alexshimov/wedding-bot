@@ -48,7 +48,7 @@ export default function ChatClient({
   // --- UI ---
   return (
     /* full-height column that contains everything */
-    <div className="h-screen flex flex-col overflow-x-hidden">
+    <div className="h-screen-dvh flex flex-col overflow-x-hidden">
       {/* ── sticky header ───────────────────────── */}
       <header className="tg-header fade-up">
   <div className="tg-title">

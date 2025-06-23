@@ -3,6 +3,7 @@ module.exports = {
   darkMode: false,
   theme: {
     extend: {
+      height: { 'screen-dvh': '100dvh' },
             colors: {
                 /* Telegram dark-theme tokens */
                 tg: {
