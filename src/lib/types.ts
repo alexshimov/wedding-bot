@@ -1,10 +1,11 @@
 export interface ChatMsg {
   id: string;
   role: "bot" | "guest";
-  type: "text" | "info" | "typing";  // ← новое значение
+  type: "text" | "info" | "typing" | "concierge";  // ← новое значение
   text?: string;
   title?: string;
   body?: string[];
+  img?: string;
 }
 
   export interface ChatState {

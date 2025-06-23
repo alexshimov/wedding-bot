@@ -7,6 +7,7 @@ import QuickReplies from "@/components/QuickReplies";
 import TextBubble   from "@/components/TextBubble";
 import InfoBubble   from "@/components/InfoBubble";
 import TypingBubble from "@/components/TypingBubble";
+import ConciergeBubble from "@/components/ConciergeBubble";
 import { useChat }  from "./useChat";
 
 export default function ChatClient({
@@ -24,12 +25,25 @@ export default function ChatClient({
 
   // --- Strict‑mode‑safe kick‑off ---
   const boot = useRef(false);
+
+  const bottomRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
     if (boot.current) return;   // избегаем двойного вызова в Dev‑StrictMode
     boot.current = true;
     step("");                   // auto‑greeting
     // eslint‑disable‑next‑line react-hooks/exhaustive-deps
+    
   }, []);
+
+  useEffect(() => {
+    if (!bottomRef.current) return;
+  
+    const last = msgs[msgs.length - 1];
+    const behavior = "auto";
+  
+    bottomRef.current.scrollIntoView({ behavior: "auto" });
+  }, [msgs.length]);  
+  
 
   // --- UI ---
   return (
@@ -55,9 +69,14 @@ export default function ChatClient({
               return <InfoBubble key={m.id} card={m} />;
             if (m.type === "typing")
               return <TypingBubble key={m.id} />;
+            if (m.type === "concierge")
+              return <ConciergeBubble msg={m} />;
             return null;
           })}
+          <div ref={bottomRef} />
         </MessageList>
+
+        </main>
         <div className="footer-panel space-y-2 px-4">
         <QuickReplies options={buttons} onPick={step} />
   
@@ -68,8 +87,6 @@ export default function ChatClient({
           className="tg-input"
         />
         </div>
-        </main>
-
       
     </div>
   );

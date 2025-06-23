@@ -15,6 +15,7 @@ export interface ChatNode {
   auto?: boolean;
   delayMs?: number;
   inquiry?: boolean;
+  concierge?: { img: string; };
   useGPT?: boolean;              // GPT only for natural glue, default = false
   next: string | ((input: string, ctx: any) => string);
 }
@@ -26,7 +27,15 @@ export const flow: Record<string, ChatNode> = {
     template: "{intro}",
     useGPT: false,
     auto: true,
-    next: () => "venue_1",
+    next: () => "concierge_intro",
+  },
+  concierge_intro: {
+    id:"concierge_intro",
+    concierge: {img:"/img/peep-17.svg",},                   // <-- новое поле
+    template:"👋 Я свадебный консьерж. Спросим пару деталей!",
+    buttons:["Поехали"],
+    useGPT: false,
+    next: ()=>"venue_1"
   },
   venue_1: {
     id: "venue_1",
@@ -55,6 +64,7 @@ export const flow: Record<string, ChatNode> = {
   rsvp_ask: {
     id: "rsvp_ask",
     template: "Смoжете ли вы присоединиться к нам 6 мая?",
+    concierge: {img:"/img/peep-18.svg",}, 
     tag: "rsvp",
     useGPT: false,
     inquiry: true,
@@ -73,6 +83,7 @@ export const flow: Record<string, ChatNode> = {
     id: "diet_ask",
     template: "Есть ли у тебя предпочтения в питании?",
     tag: "diet",
+    concierge: {img:"/img/peep-19.svg",}, 
     useGPT: false,
     inquiry: true,
     buttons: ["Нет", "Вегетарианская", "Без глютена"],

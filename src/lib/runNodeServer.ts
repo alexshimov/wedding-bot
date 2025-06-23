@@ -47,6 +47,8 @@ export async function renderNode(node: ChatNode, ctx: any, userText: string) {
   const compiled = fill(raw, ctx, userText);
 
   if (node.useGPT === false) {
+    if (node.concierge) return [{ role: "bot", text: compiled, type: "concierge", ...node.concierge }];
+    
     const out: any[] = [{ role: "bot", type: "text", text: compiled }];
     if (node.info) out.push({ role: "bot", type: "info", ...node.info });
     return out;

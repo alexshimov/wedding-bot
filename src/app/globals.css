@@ -49,12 +49,10 @@ html::before{
    .tg-header{
     position:sticky; top:0; z-index:40;
     width:100%;
-    height:58px;
+    height:50px;
     display:flex; align-items:center;          /* горизонт + вертикаль */
     justify-content:center;                    /* <-- центрируем строку */
     padding-inline:1rem;
-    width:calc(100% - 2rem);
-    max-width:32rem;          /* ← ваше новое значение */
     margin-inline:auto;       /* центрируем bar в окне */ 
 
     background:rgba(23,25,30,.89);
@@ -66,7 +64,7 @@ html::before{
     border-bottom-right-radius:1rem;
 
     font-family: var(--font-title), Inter, system-ui, sans-serif;
-    font-size: 1.15rem;         /* чуть крупнее */
+    font-size: 1.0rem;         /* чуть крупнее */
     letter-spacing: .02em;
   }
   
@@ -89,6 +87,10 @@ html::before{
 .cs-message-input__content-editor-wrapper,
 .cs-message-input__content-editor-container {
   background-color: transparent !important;
+}
+
+.cs-message-list__scroll-wrapper>.cs-message, .cs-message-list__scroll-wrapper>.cs-message-group {
+  max-width: 100%;
 }
 
 /* .cs-message--incoming .cs-message__content {
@@ -322,6 +324,38 @@ html::before{
   color:#4e9bff;
 }
 .info-card a:hover{ text-decoration:none; }
+
+/* — CONCIERGE CARD v2 — */
+.cs-message--incoming .cs-message__content:has(.concierge-card){
+  padding:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+}
+
+/* портрет-вариант */
+.concierge-card.portrait{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  padding:1.25rem 1.5rem 1.5rem;  /* сверху под картинку чуть больше */
+}
+
+.concierge-img{
+  width:160px;
+  margin-bottom: -0.5rem;
+  filter:drop-shadow(0 4px 8px rgba(0,0,0,.35));
+}
+
+.concierge-text{
+  padding:.5rem .85rem 0.85rem 0.85rem;
+  border-radius:0 .7em .7em .7em;;
+  line-height:1.25rem;
+  font-size:.925rem;
+  font-weight:400;
+  position:relative;
+
+  background:#2b2e36;
+}
 
 .markdown h1   { @apply text-lg font-bold; }
 .markdown h2   { @apply text-base font-bold; }
