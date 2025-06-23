@@ -12,6 +12,7 @@
     /* easy tweak dials */
     --glow-strength:.54;   /* 0-.35  → brighter glow */
     --tex-opacity:.08;     /* 0-.12  → pattern strength */
+    --sat: env(safe-area-inset-top, 0px);
 }
 
 
@@ -48,7 +49,7 @@ html::before{
    ──────────────────────────────────────────── */
    .tg-header{
     position:sticky; 
-    top:env(safe-area-inset-bottom,0px); 
+    top: var(--sat);
     z-index:40;
     width:100%;
     height:50px;
