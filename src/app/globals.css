@@ -17,7 +17,8 @@
 
 
 html,body{
-  height:100%; margin:0; color-scheme:dark;
+  height: 100dvh; 
+  margin:0; color-scheme:dark;
   font-family:Inter, system-ui, sans-serif;
   background:#0d0d11;                         /* base charcoal */
 

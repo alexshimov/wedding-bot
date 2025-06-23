@@ -11,7 +11,7 @@ export const metadata = { title: "Wedding Invitation", description: "Anna & Dmit
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="ru" className={titleFont.variable}>
-      <body className="min-h-screen">
+      <body>
         {children}
       </body>
     </html>
