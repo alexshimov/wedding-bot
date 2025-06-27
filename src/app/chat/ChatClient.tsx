@@ -11,6 +11,8 @@ import ConciergeBubble from "@/components/ConciergeBubble";
 import EventInfoBubble from "@/components/EventInfoBubble";
 import { useChat } from "./useChat";
 
+let hasBooted = false; 
+
 export default function ChatClient({
   guestName,
   guestId,
@@ -22,16 +24,16 @@ export default function ChatClient({
 }) {
 
   // --- hook ---
-  const { msgs, buttons, step } = useChat(start, { name: guestName }, guestId);
+  const { msgs, buttons, step, flushNext } = useChat(start, { name: guestName }, guestId);
 
   // --- Strict‑mode‑safe kick‑off ---
   const boot = useRef(false);
 
   const bottomRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
-    if (boot.current) return;   // избегаем двойного вызова в Dev‑StrictMode
-    boot.current = true;
-    step("");                   // auto‑greeting
+    if (hasBooted) return;     // второй mount ничего не делает
+    hasBooted = true;
+    step("");                 // auto‑greeting
     // eslint‑disable‑next‑line react-hooks/exhaustive-deps
 
   }, []);
@@ -65,7 +67,7 @@ export default function ChatClient({
         <MessageList className="flex-1 min-h-0 overflow-y-auto no-edge-padding">
           {msgs.map((m, i) => {
             if (m.type === "text")
-              return <TextBubble key={m.id} text={m.text} role={m.role} delay={i * 0.12} />;
+              return <TextBubble key={m.id} text={m.text} role={m.role} onFinishTyping={flushNext}  />;
             if (m.type === "info")
               return <InfoBubble key={m.id} card={m} />;
             if (m.type === "event")
@@ -73,7 +75,7 @@ export default function ChatClient({
             if (m.type === "typing")
               return <TypingBubble key={m.id} />;
             if (m.type === "concierge")
-              return <ConciergeBubble key={m.id} msg={m} />;
+              return <ConciergeBubble key={m.id} msg={m} onFinishTyping={flushNext} />;
             return null;
           })}
           <div ref={bottomRef} />

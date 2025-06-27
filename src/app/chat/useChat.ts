@@ -1,56 +1,86 @@
-/* src/app/chat/useChat.ts */
-import { useState } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import type { ChatMsg } from "@/lib/types";
 
-/** утилита: гарантировано добавляет id */
-function add(m: ChatMsg): ChatMsg {
-  return { id: m.id ?? crypto.randomUUID(), ...m };
-}
+const withId = <T extends Partial<ChatMsg>>(m: T): ChatMsg =>
+  ({ id: m.id ?? crypto.randomUUID(), ...m }) as ChatMsg;
 
-/**
- * Тонкий клиент-хук: хранит messages, кнопки и state,
- * отправляет ввод на /api/step, пока ждёт — показывает индикатор typing
- */
-export function useChat(start: string, ctx: { name: string }, guestId: string) {
-  const [state,   setState]   = useState(start);
+const TYPING_MS = 900;
+
+export function useChat(start: string, ctx: any, guestId: string) {
+  const [msgs, setMsgs] = useState<ChatMsg[]>([]);
   const [buttons, setButtons] = useState<string[]>([]);
-  const [msgs,    setMsgs]    = useState<ChatMsg[]>([]);
+  const [state, setState] = useState(start);
 
-  /** отправка текста или клика */
+  /* очередь живёт во вне-React ref */
+  const q = useRef<ChatMsg[]>([]);
+  const timer = useRef<NodeJS.Timeout>();
+
+  /* ---------- показывает typing на TYPING_MS и потом next() ---------- */
+  const showTypingThen = useCallback((next: () => void) => {
+    setMsgs(m => [...m, withId({ role: "bot", type: "typing" })]);
+    timer.current = setTimeout(() => {
+      setMsgs(m => m.filter(x => x.type !== "typing"));
+      next();
+    }, TYPING_MS);
+  }, []);
+
+  /* ---------- выводит один элемент из очереди ---------- */
+  const playNext = useCallback(() => {
+    if (q.current.length === 0) return;
+    const item = q.current.shift()!;
+
+    setMsgs(m => [...m, item]);
+
+    const botText =
+      item.role === "bot" &&
+      (item.type === "text" || item.type === "concierge");
+
+    if (botText) {
+      /* ждём signal из useTyping (flushNext) */
+    } else if (q.current.length) {
+      /* info / event — сразу ставим typing-плейсхолдер */
+      showTypingThen(playNext);
+    }
+  }, [showTypingThen]);
+
+  /* ---------- when useTyping finishes ---------- */
+  const flushNext = useCallback(() => {
+    if (q.current.length) showTypingThen(playNext);
+  }, [playNext, showTypingThen]);
+
+  /* ---------- кладём элементы и, если idle, стартуем ---------- */
+  const enqueue = (list: ChatMsg[]) => {
+    q.current.push(...list);
+    if (q.current.length === list.length) playNext(); // очередь была пуста
+  };
+
+  /* ---------- основной step() ---------- */
   async function step(input: string) {
-    const trimmed = input.trim();
-  
-    // 0 · guest bubble
-    if (trimmed)
-      setMsgs((m) => [...m, add({ role:"guest", type:"text", text:trimmed })]);
-  
-    // 1 · temporary typing bubble
-    const typingId = crypto.randomUUID();
-    setMsgs((m) => [...m, { id:typingId, role:"bot", type:"typing" }]);
-  
-    // 2 · server request
+    if (input.trim())
+      setMsgs(m => [...m, withId({ role: "guest", type: "text", text: input.trim() })]);
+
+    /* временный typing, пока ждём сервер */
+    setMsgs(m => [...m, withId({ role: "bot", type: "typing" })]);
+
     const res = await fetch("/api/step", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id: guestId, state, input, ctx }),
-    }).then((r) => r.json());
-  
-    // 3 · remove *all* typing bubbles
-    setMsgs((m) => m.filter((msg) => msg.type !== "typing"));
-  
-    // 4 · update state & buttons
-    setState(res.state);
+    }).then(r => r.json());
+
+    setMsgs(m => m.filter(x => x.type !== "typing"));     // убираем placeholder
     setButtons(res.buttons ?? []);
-  
-    // 5 · append bot messages
-    setMsgs((m) => {
-            const noTyping = m.filter((msg) => msg.type !== "typing");
-            const fresh    = res.messages
-                               .filter((msg:any) => msg.type !== "typing")
-                               .map((msg:any) => add(msg as ChatMsg));
-            return [...noTyping, ...fresh];
-          });
+    setState(res.state);
+
+    enqueue(
+      res.messages
+        .filter((m: any): m is ChatMsg => m.type !== "typing")
+        .map(withId)
+    );
   }
 
-  return { msgs, buttons, step };
+  /* ---------- чистим таймер при размонтировании ---------- */
+  useEffect(() => () => clearTimeout(timer.current), []);
+
+  return { msgs, buttons, step, flushNext };
 }

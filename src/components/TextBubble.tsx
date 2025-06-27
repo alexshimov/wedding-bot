@@ -11,15 +11,18 @@ export default function TextBubble({
   role,
   voice,
   delay = 0,
+  onFinishTyping,
 }: {
   text: string;
   role: "bot" | "guest";
   voice?: boolean;
   delay?: number;
+  onFinishTyping?: () => void;
 }) {
     /* ────────── typing effect ────────── */
-  const shown = role === "bot" ? useTyping(text) : text;
-
+  const shown = role === "bot"
+    ? useTyping(text, 10, onFinishTyping)   // 3-й аргумент — колбэк
+    : text;
   /* ────────── auto-scroll while typing ────────── */
   const ref = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
@@ -28,9 +31,9 @@ export default function TextBubble({
 
   return (
       <motion.div
-        initial={{ opacity: 0, scale: 0.95, y: 10 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        transition={{ duration: 0.25, ease: "easeOut", delay }}
+        initial={{ opacity: 0, scale: 0.95, x: -200 }}
+        animate={{ opacity: 1, scale: 1, x: 0 }}
+        transition={{ duration: 0.35, ease: "backOut", delay }}
         ref={ref}
       >
         <Message

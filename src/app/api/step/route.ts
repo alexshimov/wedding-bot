@@ -31,6 +31,13 @@ export async function POST(req: Request) {
     });
   }
 
+  const isFirstHit = body.state === "greeting"   //  ваш старт-leaf
+    && (body.input ?? "").trim() === "";
+  if (isFirstHit) {
+    guest.seen = [];        // забываем, что уже показывали
+    guest.states = [];        // (если тоже нужно заново пройти дерево)
+  }
+
   // if (body.input.trim()) {                           // гость что-то ввёл
   //   const node = flow[body.state];      // узел, который видит клиент
   //   const isButton = node.buttons?.some(

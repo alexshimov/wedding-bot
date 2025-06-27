@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 
 /** Returns the gradually-revealed text. */
-export function useTyping(full: string, speedMs = 18) {
-  const [shown, setShown] = useState("");
+export function useTyping(full: string, speedMs = 5, onDone?: () => void) {
+  const [shown, setShown] = useState<string>("");
 
   useEffect(() => {
     // instantly show guest bubbles / second renders
@@ -12,11 +12,14 @@ export function useTyping(full: string, speedMs = 18) {
     const id = setInterval(() => {
       i += 1;
       setShown(full.slice(0, i));
-      if (i === full.length) clearInterval(id);
+      if (i === full.length) {
+        clearInterval(id);
+        onDone?.(); 
+      }
     }, speedMs);
 
     return () => clearInterval(id);
   }, [full]);          // ← restart when text changes
 
-  return shown || full; // while mounting: fallback to full
+  return shown; // while mounting: fallback to full
 }

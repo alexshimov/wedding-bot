@@ -1,14 +1,26 @@
 "use client";
 import { Message } from "@chatscope/chat-ui-kit-react";
+import { motion } from "framer-motion";
 import Image from "next/image";
 import { ChatMsg } from "@/lib/types";
+import { useRef, useEffect } from "react";
 
 /**
  * Информационная карточка, отображаемая прямо внутри стандартного «пузыря».
  * Убираем собственную белую подложку, чтобы контент выглядел как обычное сообщение.
  */
 export default function InfoBubble({ card }: { card: Extract<ChatMsg, { type: "info" }> }) {
+
+  const ref = useRef<HTMLDivElement | null>(null);
+  useEffect(() => { ref.current?.scrollIntoView({ behavior: "auto" }); }, []);
+
   return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95, x: -200 }}
+      animate={{ opacity: 1, scale: 1, x: 0 }}
+      transition={{ duration: .35, ease: "easeOut" }}
+      ref={ref}
+    >
     <Message
       model={{ direction: "incoming", position: "single" }}
       className="max-w-[80%]"
@@ -40,5 +52,6 @@ export default function InfoBubble({ card }: { card: Extract<ChatMsg, { type: "i
         </div>
       </Message.CustomContent>
     </Message>
+    </motion.div>
   );
 }

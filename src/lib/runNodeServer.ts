@@ -2,11 +2,11 @@
  * Core request/response loop, now driven by the BehaviourTree engine.
  * NOTE: nothing else in the repo had to change.
  */
-import { FlowEngine }            from "@/lib/flowEngine";
-import { renderNode }            from "./renderNode"
-import type { ChatNode }         from "./flow";
-import { flow }                  from "./flow";
-import OpenAI                    from "openai";
+import { FlowEngine } from "@/lib/flowEngine";
+import { renderNode } from "./renderNode"
+import type { ChatNode } from "./flow";
+import { flow } from "./flow";
+import OpenAI from "openai";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
 
@@ -38,17 +38,31 @@ export async function answerUnknown(txt: string) {
 
 export async function runFlow(stateId: string, input: string, ctx: any) {
   /* make sure helper arrays exist */
-  if (!Array.isArray(ctx.seen))   ctx.seen   = [];
+  if (!Array.isArray(ctx.seen)) ctx.seen = [];
   if (!Array.isArray(ctx.states)) ctx.states = [];
 
   /* 1️⃣  rebuild engine for the last leaf client told us about */
   const engine = await FlowEngine.resume(stateId, ctx);
-  console.log('rebuild', engine.node())
 
   /* 2️⃣  if guest just sent text – consume it and move on      */
+
   const userInput = input.trim();
-  if (userInput) await engine.advance(userInput, ctx);
-  console.log('userINput', userInput, engine.node())
+  if (userInput) {
+    if (engine.id() === stateId) {
+      /* 2a. узел тот же — обычный путь */
+      await engine.advance(userInput, ctx);
+    } else {
+      /* 2b. resume перескочил: ввод относится к ПРЕДЫДУЩЕМУ узлу */
+      const prevNode = flow[stateId];
+      /* если этот узел ожидал ответ — сохраняем его вручную */
+      if (prevNode?.inquiry) ctx[prevNode.id] = userInput;
+      /* можно дополнительно вызвать собственный обработчик,
+         если нужно писать в Google Sheets:
+         await prevNode.onExit?.forEach(fn => fn?.(ctx, userInput));
+      */
+      /* важное: advance НЕ зовём — движок уже стоит на новом валидном листе */
+    }
+  }
 
   /* 3️⃣  keep rendering/advancing until we hit an interactive node */
   const messages: any[] = [];
@@ -70,7 +84,7 @@ export async function runFlow(stateId: string, input: string, ctx: any) {
   }
 
   return {
-    state:   engine.id(),                // leaf-id for the browser to keep
+    state: engine.id(),                // leaf-id for the browser to keep
     buttons: engine.node().buttons ?? [],// quick-reply chips
     messages,                            // payload to append in the chat
   };
