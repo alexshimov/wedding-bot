@@ -4,12 +4,12 @@ import { useSearchParams } from "next/navigation";
 import { MessageList, MessageInput } from "@chatscope/chat-ui-kit-react";
 
 import QuickReplies from "@/components/QuickReplies";
-import TextBubble   from "@/components/TextBubble";
-import InfoBubble   from "@/components/InfoBubble";
+import TextBubble from "@/components/TextBubble";
+import InfoBubble from "@/components/InfoBubble";
 import TypingBubble from "@/components/TypingBubble";
 import ConciergeBubble from "@/components/ConciergeBubble";
 import EventInfoBubble from "@/components/EventInfoBubble";
-import { useChat }  from "./useChat";
+import { useChat } from "./useChat";
 
 export default function ChatClient({
   guestName,
@@ -17,8 +17,8 @@ export default function ChatClient({
   start,
 }: {
   guestName: string;
-  guestId:  string;
-  start:    string;
+  guestId: string;
+  start: string;
 }) {
 
   // --- hook ---
@@ -33,18 +33,18 @@ export default function ChatClient({
     boot.current = true;
     step("");                   // auto‑greeting
     // eslint‑disable‑next‑line react-hooks/exhaustive-deps
-    
+
   }, []);
 
   useEffect(() => {
     if (!bottomRef.current) return;
-  
+
     const last = msgs[msgs.length - 1];
     const behavior = "auto";
-  
+
     bottomRef.current.scrollIntoView({ behavior: "auto" });
-  }, [msgs.length]);  
-  
+  }, [msgs.length]);
+
 
   // --- UI ---
   return (
@@ -52,20 +52,20 @@ export default function ChatClient({
     <div className="h-screen-dvh flex flex-col overflow-x-hidden">
       {/* ── sticky header ───────────────────────── */}
       <header className="tg-header fade-up">
-  <div className="tg-title">
-    <span role="img" aria-label="Ring" className="text-xl">💍</span>
-    <span className="whitespace-nowrap ml-2">
-      Александр&nbsp;и&nbsp;Ольга&nbsp;·&nbsp;23&nbsp;июля&nbsp;2025
-    </span>
-  </div>
-</header>
-  
+        <div className="tg-title">
+          <span role="img" aria-label="Ring" className="text-xl">💍</span>
+          <span className="whitespace-nowrap ml-2">
+            Александр&nbsp;и&nbsp;Ольга&nbsp;·&nbsp;23&nbsp;июля&nbsp;2025
+          </span>
+        </div>
+      </header>
+
       {/* ── chat column (scroll area) ───────────── */}
       <main className="flex-1 min-h-0 w-full max-w-md mx-auto flex flex-col px-4">
         <MessageList className="flex-1 min-h-0 overflow-y-auto no-edge-padding">
-          {msgs.map((m) => {
+          {msgs.map((m, i) => {
             if (m.type === "text")
-              return <TextBubble key={m.id} text={m.text} role={m.role} />;
+              return <TextBubble key={m.id} text={m.text} role={m.role} delay={i * 0.12} />;
             if (m.type === "info")
               return <InfoBubble key={m.id} card={m} />;
             if (m.type === "event")
@@ -79,18 +79,18 @@ export default function ChatClient({
           <div ref={bottomRef} />
         </MessageList>
 
-        </main>
-        <div className="footer-panel space-y-2 px-4">
+      </main>
+      <div className="footer-panel space-y-2 px-4">
         <QuickReplies options={buttons} onPick={step} />
-  
+
         <MessageInput
           placeholder="Ваш ответ…"
           onSend={step}
           attachButton={false}
           className="tg-input"
         />
-        </div>
-      
+      </div>
+
     </div>
   );
 }

@@ -363,6 +363,12 @@ html::before{
   background:#2b2e36;
 }
 
+@keyframes blink { 0%, 50% { opacity: 1 } 51%,100% { opacity: 0 } }
+.typing-caret::after{
+  content:"▍";
+  animation:blink 1.1s steps(1) infinite;
+}
+
 .markdown h1   { @apply text-lg font-bold; }
 .markdown h2   { @apply text-base font-bold; }
 .markdown p    { @apply mb-2;              }
