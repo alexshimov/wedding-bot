@@ -8,6 +8,7 @@ import TextBubble   from "@/components/TextBubble";
 import InfoBubble   from "@/components/InfoBubble";
 import TypingBubble from "@/components/TypingBubble";
 import ConciergeBubble from "@/components/ConciergeBubble";
+import EventInfoBubble from "@/components/EventInfoBubble";
 import { useChat }  from "./useChat";
 
 export default function ChatClient({
@@ -67,10 +68,12 @@ export default function ChatClient({
               return <TextBubble key={m.id} text={m.text} role={m.role} />;
             if (m.type === "info")
               return <InfoBubble key={m.id} card={m} />;
+            if (m.type === "event")
+              return <EventInfoBubble key={m.id} card={m} />;
             if (m.type === "typing")
               return <TypingBubble key={m.id} />;
             if (m.type === "concierge")
-              return <ConciergeBubble msg={m} />;
+              return <ConciergeBubble key={m.id} msg={m} />;
             return null;
           })}
           <div ref={bottomRef} />

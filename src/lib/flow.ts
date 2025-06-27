@@ -1,54 +1,72 @@
-/*
- * Revised flow with linear story + interruptible FAQ nodes.
- * Each story node has a `tag` so we can skip it if that topic was already
- * covered in an FAQ answer.  FAQ nodes finish with next="__resume__" –
- * the engine will replace this sentinel with the id of the next pending story
- * node (see runNodeServer.ts).
- */
-
+/* ------------------------------------------------------------------ */
+/* 1.  Chat-node definition  (unchanged – keeps all the existing UI   */
+/*     fields so renderNode.ts keeps working)                         */
+/* ------------------------------------------------------------------ */
 export interface ChatNode {
-  id: string;
-  template: string | string[];
-  tag?: string;                  // ― thematic tag (venue, schedule…)
-  buttons?: string[];
-  info?: { title: string; body: string[]; link: string };
-  auto?: boolean;
-  delayMs?: number;
-  inquiry?: boolean;
-  concierge?: { img: string; };
-  useGPT?: boolean;              // GPT only for natural glue, default = false
-  next: string | ((input: string, ctx: any) => string);
+  id:        string;
+  template:  string | string[];
+  tag?:      string;
+  buttons?:  string[];
+  info?:     { title: string; body: string[]; link: string };
+  event?:     { img: string; checkIn: string; checkOut: string, ceremony: string, address: string, mapLink: string, overnight:Boolean };
+  auto?:     boolean;          // kept for backward-compat but no longer used
+  delayMs?:  number;
+  inquiry?:  boolean;
+  concierge?: { img: string };
+  useGPT?:   boolean;
 }
 
+import * as prompts from "./prompts";
+
+/* the original linear map of leaves – **unchanged** ---------------- */
 export const flow: Record<string, ChatNode> = {
-  /* ────────────── STORY  ────────────── */
+  /* … all your existing nodes verbatim… */
   greeting: {
     id: "greeting",
+    tag: "greeting",
     template: "{intro}",
     useGPT: false,
     auto: true,
-    next: () => "concierge_intro",
   },
   concierge_intro: {
     id:"concierge_intro",
+    tag: "concierge_intro",
     concierge: {img:"/img/peep-17.svg",},                   // <-- новое поле
-    template:"👋 Я свадебный консьерж. Спросим пару деталей!",
+    template: prompts.greeting,
     buttons:["Поехали"],
-    useGPT: false,
-    next: ()=>"venue_1"
+    useGPT: true
   },
-  venue_1: {
-    id: "venue_1",
-    template: "Церемония пройдёт в усадьбе «Середниково» – это историческое место с белыми колоннами и парком.",
-    tag: "venue",
-    useGPT: false,
-    info: {
-      title: "🏛 Место церемонии",
-      body: ["Усадьба ‘Середниково’, 25 км от Москвы", "Парковка открыта с 12:00"],
-      link: "http://localhost"
+  eventInfo_overnight: {
+    id: "eventInfo_overnight",
+    template: prompts.eventInfo_overnight,
+    tag: "eventInfo",
+    useGPT: true,
+    event: {
+      img: "/img/village-01.png",
+      checkIn: "22 июля, 16:00",
+      checkOut: "24 июля, 13:00",
+      ceremony: "23 июля, 15:00",
+      overnight: true,
+      address: "Пушкинский район, поселок городского типа «Зеленоградский», ул.Ватутина 17",
+      mapLink: "https://yandex.eu/maps/-/CHg5MRZF",
     },
-    buttons: ["Продолжить"],
-    next: (inp) => "schedule_1",
+    buttons: ["Продолжить"]
+  },
+  eventInfo_ceremony: {
+    id: "eventInfo_ceremony",
+    template: prompts.eventInfo_ceremony,
+    tag: "eventInfo",
+    useGPT: true,
+    event: {
+      img: "/img/village-01.png",
+      checkIn: "22 июля, 16:00",
+      checkOut: "24 июля, 13:00",
+      ceremony: "23 июля, 15:00",
+      overnight: false,
+      address: "Пушкинский район, поселок городского типа «Зеленоградский», ул.Ватутина 17",
+      mapLink: "https://yandex.eu/maps/-/CHg5MRZF",
+    },
+    buttons: ["Продолжить"]
   },
   schedule_1: {
     id: "schedule_1",
@@ -58,8 +76,7 @@ export const flow: Record<string, ChatNode> = {
 20:00 — первый танец и вечеринка`,
     tag: "schedule",
     useGPT: false,
-    buttons: ["Продолжить"],
-    next: (inp) => "rsvp_ask",
+    buttons: ["Продолжить 2"]
   },
   rsvp_ask: {
     id: "rsvp_ask",
@@ -68,16 +85,14 @@ export const flow: Record<string, ChatNode> = {
     tag: "rsvp",
     useGPT: false,
     inquiry: true,
-    buttons: ["Да", "Нет"],
-    next: (inp) => inp.length > 0 ? "rsvp_thanks" : "diet_ask",
+    buttons: ["Да", "Нет"]
   },
   rsvp_thanks: {
     id: "rsvp_thanks",
     template: "Спасибо за ответ! 🥂",
     useGPT: false,
     auto: true,
-    delayMs: 1000,
-    next: () => "diet_ask",
+    delayMs: 1000
   },
   diet_ask: {
     id: "diet_ask",
@@ -86,39 +101,34 @@ export const flow: Record<string, ChatNode> = {
     concierge: {img:"/img/peep-19.svg",}, 
     useGPT: false,
     inquiry: true,
-    buttons: ["Нет", "Вегетарианская", "Без глютена"],
-    next: () => "diet_thanks",
+    buttons: ["Нет", "Вегетарианская", "Без глютена"]
   },
   diet_thanks: {
     id: "diet_thanks",
     template: "Учтём это при подготовке меню!",
     useGPT: false,
     auto: true,
-    delayMs: 1000,
-    next: () => "fun_fact_offer",
+    delayMs: 1000
   },
   fun_fact_offer: {
     id: "fun_fact_offer",
     template: "Хочешь услышать забавный факт о нас?",
     tag: "fun_fact",
     useGPT: false,
-    buttons: ["Да", "Продолжить"],
-    next: (inp) => inp.toLowerCase().startsWith("д") ? "fun_fact" : "closing",
+    buttons: ["Да", "Продолжить"]
   },
   fun_fact: {
     id: "fun_fact",
     template: "Дима сделал предложение на вершине вулкана Папандоян, пряча кольцо в коробочке с печеньем!",
     useGPT: false,
     auto: true,
-    delayMs: 1500,
-    next: () => "closing",
+    delayMs: 1500
   },
   closing: {
     id: "closing",
     template: "До встречи 6 мая! Если понадобится помощь — просто напиши сюда.",
     tag: "closing",
-    useGPT: false,
-    next: () => "closing",
+    useGPT: false
   },
 
   /* ────────────── FAQ  ────────────── */
@@ -128,17 +138,15 @@ export const flow: Record<string, ChatNode> = {
     tag: "venue",
     useGPT: false,
     auto: true,
-    delayMs: 1200,
-    next: () => "__resume__",
+    delayMs: 1200
   },
   faq_time: {
     id: "faq_time",
     template: "Начинаем ровно в 14:00. Приезжать можно с 13:30 — будет приветственный лимонад.",
-    tag: "schedule",
+    tag: "faq_time",
     useGPT: false,
     auto: true,
-    delayMs: 1200,
-    next: () => "__resume__",
+    delayMs: 1200
   },
   faq_route: {
     id: "faq_route",
@@ -146,8 +154,7 @@ export const flow: Record<string, ChatNode> = {
     tag: "venue",
     useGPT: false,
     auto: true,
-    delayMs: 1200,
-    next: () => "__resume__",
+    delayMs: 1200
   },
 
   unknown: {
@@ -160,8 +167,127 @@ export const flow: Record<string, ChatNode> = {
 Ответь на русском, дружелюбно, одним‑двумя предложениями.`,
     useGPT: true,
     auto: false,              // ← больше не прыгаем автоматически
-    buttons: ["Продолжить"],  // ← ждём явного клика
-    next: (inp) =>
-      inp.toLowerCase().includes("прод") ? "__resume__" : "unknown",
+    buttons: ["Продолжить"]
   },
+};
+
+/* ------------------------------------------------------------------ */
+/* 2.  Behaviour-tree primitives                                      */
+/* ------------------------------------------------------------------ */
+export type Condition = (ctx: any) => boolean | Promise<boolean>;
+export type Action    = (ctx: any, lastInput: string) => void | Promise<void>;
+
+export type BTNode =
+  | { id: string; type: "leaf";
+      conditions?: Condition[];
+      onEnter?:    Action[];
+      onExit?:     Action[]; }
+
+  | { id: string; type: "sequence" | "selector";
+      children:   BTNode[];
+      conditions?: Condition[];
+      onEnter?:    Action[];
+      onExit?:     Action[]; };
+
+/* handy helpers you may reuse when writing new branches ------------- */
+export const once      = (tag: string): Condition => (ctx) =>
+  !(ctx.seen?.includes?.(tag));
+
+export const isStayingOvernight      = (tag: string): Condition => (ctx) =>
+  Boolean(ctx.stays);
+
+export const isNotStayingOvernight      = (tag: string): Condition => (ctx) =>
+  !Boolean(ctx.stays);
+
+export const slotFilled = (slot: string): Condition => (ctx) =>
+  Boolean(ctx[slot]);
+
+export const typing = (ms: number): Action => async () =>
+  new Promise((r) => setTimeout(r, ms));
+
+/* example async action that stores the answer to Google Sheets ------- */
+import { updateGuest } from "./sheets";
+export const saveAnswer = (field: string): Action =>
+  async (ctx, lastInput) => {
+    if (lastInput && ctx.rowNumber) {
+      await updateGuest(ctx.rowNumber, field, lastInput);
+    }
+  };
+
+/* ------------------------------------------------------------------ */
+/* 3.  Declarative behaviour-tree                                     */
+/*     (feel free to extend – only this object needs editing)         */
+/* ------------------------------------------------------------------ */
+export const tree: BTNode = {
+  id: "root",
+  type: "sequence",
+  children: [
+    { id: "greeting",        type: "leaf", conditions: [once("greeting")], },
+    { id: "concierge_intro", type: "leaf", conditions: [once("concierge_intro")], },
+    {
+      id: "eventInfo_selector",
+      type: "sequence",
+      children: [
+        {
+          id: "eventInfo_overnight",
+          type: "leaf",
+          conditions: [isStayingOvernight("eventInfo_overnight"), once("eventInfo")]
+        },
+        {
+          id: "eventInfo_ceremony",
+          type: "leaf",
+          conditions: [isNotStayingOvernight("eventInfo_ceremony"), once("eventInfo")]
+        }
+      ],
+    },
+    {
+      id: "main",
+      type: "sequence",
+      children: [
+        { id: "schedule_1", type: "leaf" },
+
+        {
+          id: "rsvp_selector",
+          type: "sequence",
+          children: [
+            {
+              id: "rsvp_thanks",
+              type: "leaf",
+              conditions: [slotFilled("rsvp_ask")],
+            },
+            {
+              id: "rsvp_ask",
+              type: "leaf",
+              onExit: [saveAnswer("rsvp_ask")],
+            },
+          ],
+        },
+
+        {
+          id: "diet_selector",
+          type: "selector",
+          children: [
+            {
+              id: "diet_thanks",
+              type: "leaf",
+              conditions: [slotFilled("diet_ask")],
+            },
+            {
+              id: "diet_ask",
+              type: "leaf",
+              onExit: [saveAnswer("diet_ask")],
+            },
+          ],
+        },
+
+        { id: "fun_fact_offer", type: "leaf" },
+        {
+          id: "fun_fact",
+          type: "leaf",
+          onEnter: [typing(1500)],
+        },
+        { id: "closing", type: "leaf" },
+      ],
+    },
+  ],
 };

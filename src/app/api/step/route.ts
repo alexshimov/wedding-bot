@@ -31,34 +31,34 @@ export async function POST(req: Request) {
     });
   }
 
-  if (body.input.trim()) {                           // гость что-то ввёл
-    const node = flow[body.state];      // узел, который видит клиент
-    const isButton = node.buttons?.some(
-      b => b.toLowerCase() === body.input.trim().toLowerCase()
-    );
+  // if (body.input.trim()) {                           // гость что-то ввёл
+  //   const node = flow[body.state];      // узел, который видит клиент
+  //   const isButton = node.buttons?.some(
+  //     b => b.toLowerCase() === body.input.trim().toLowerCase()
+  //   );
+  //   console.log(node, isButton)
 
-    if (node.inquiry) {
-      console.log('INQU')
-      await updateGuest(guest.rowNumber, body.state, body.input.trim());
-    }
-    else {
-      if (body.input.trim() && !isButton) {
-        const tag = await detectIntent(body.input);
-        const nodeId = INTENTS[tag as Intent];
+  //   if (node.inquiry) {
+  //     await updateGuest(guest.rowNumber, body.state, body.input.trim());
+  //   }
+  //   else {
+  //     if (body.input.trim() && !isButton) {
+  //       const tag = await detectIntent(body.input);
+  //       const nodeId = INTENTS[tag as Intent];
 
-        console.log("Intent: " + tag)
+  //       console.log("Intent: " + tag)
 
-        if (tag !== "unknown" && flow[nodeId]) {                         // 1) узнали тег
-          const nodeId = INTENTS[tag];
-          const result = await runFlow(nodeId, "", guest); // идём прямо в узел
-          return Response.json(result);
-        } else {
-          const result = await runFlow("unknown", body.input, guest);                                  // 2) не поняли
-          return Response.json(result);
-        }
-      }
-    }
-  }
+  //       if (tag !== "unknown" && flow[nodeId]) {                         // 1) узнали тег
+  //         const nodeId = INTENTS[tag];
+  //         const result = await runFlow(nodeId, "", guest); // идём прямо в узел
+  //         return Response.json(result);
+  //       } else {
+  //         const result = await runFlow("unknown", body.input, guest);                                  // 2) не поняли
+  //         return Response.json(result);
+  //       }
+  //     }
+  //   }
+  // }
 
   /* run normal flow with ctx = guest */
   const res = await runFlow(body.state, body.input, guest);

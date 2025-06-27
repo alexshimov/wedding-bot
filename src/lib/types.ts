@@ -1,7 +1,7 @@
 export interface ChatMsg {
   id: string;
   role: "bot" | "guest";
-  type: "text" | "info" | "typing" | "concierge";  // ← новое значение
+  type: "text" | "info" | "typing" | "concierge" | "event";  // ← новое значение
   text?: string;
   title?: string;
   body?: string[];

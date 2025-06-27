@@ -34,7 +34,7 @@ export default function InfoBubble({ card }: { card: Extract<ChatMsg, { type: "i
               target="_blank"
               className="text-blue-600 underline inline-block mt-1"
             >
-              Подробнее →
+              {card.link_name} →
             </a>
           )}
         </div>

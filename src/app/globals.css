@@ -288,7 +288,7 @@ html::before{
 
 .info-card{
   position:relative;
-  padding:1.25rem 1.25rem 1.25rem 1.75rem;   /* +0.5rem слева под полоску */
+  padding:1.25rem 0rem 1.25rem 1.75rem;   /* +0.5rem слева под полоску */
   background:#2b2e36;
   border-radius:1rem;
   box-shadow:inset 0 0 0 1px rgba(255,255,255,.03),
@@ -315,13 +315,15 @@ html::before{
 }
 
 /* Картинка (если есть) «уходит» под полоску */
-.info-card > img:first-child{
+ .info-card > img:first-child{
   margin-left:-1.75rem;
+  margin-top:-1.25rem;
   width:calc(100% + 1.75rem);
+  max-width:calc(100% + 1.75rem);
   border-top-left-radius:inherit;
   border-bottom-left-radius:inherit;
   margin-bottom:.8rem;
-}
+} 
 
 /* Ссылки в карточке */
 .info-card a{
