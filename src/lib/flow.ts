@@ -217,8 +217,10 @@ export const isNotStayingOvernight = (tag: string): Condition => (ctx) =>
 export const slotFilled = (slot: string): Condition => (ctx) =>
   Boolean(ctx[slot]);
 
-export const slotNotFilled = (slot: string): Condition => (ctx) =>
-  Boolean(!ctx[slot]);
+export const slotNotFilled = (slot: string): Condition => (ctx) => {
+  console.log('slotNotFilled', ctx[slot])
+  return Boolean(!ctx[slot]);
+}
 
 export const intent = (tag: string): Condition => (ctx) => {
   return Boolean(ctx.intent === tag);
@@ -233,6 +235,7 @@ export const saveAnswer = (field: string): Action =>
   async (ctx, lastInput) => {
     if (ctx.lastUserInput && ctx.rowNumber) {
       ctx[field] = ctx.lastUserInput;
+      console.log('saveAnswer',  ctx[field], '-', ctx.lastUserInput)
       await updateGuest(ctx.rowNumber, field, ctx.lastUserInput);
     }
   };

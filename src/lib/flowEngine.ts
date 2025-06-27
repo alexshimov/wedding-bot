@@ -49,6 +49,19 @@ export class FlowEngine {
 
   /* advance one leaf ­───────────────────────────────────────────── */
   async advance(userInput: string, ctx: any) {
+    if (!(await this.isPathStillValid(ctx))) {
+      // пробуем остаться на том же leaf; если он недоступен —
+      // берём первый валидный лист от корня
+      const fresh =
+        (await this.pathToLeaf(tree, ctx, this.id())) ||
+        (await this.pathToLeaf(tree, ctx));
+
+      if (!fresh) throw new Error("BT: cannot rebuild after ctx change");
+
+      this.stack = fresh;               // новый путь
+      return;                           //   ↳  leaf уже валиден; ввод
+    }                                   //     обработаем в СЛЕДУЮЩЕМ advance
+
     const leaf = this.node();
     if (userInput && leaf.inquiry) ctx[leaf.id] = userInput; // save answer
 
