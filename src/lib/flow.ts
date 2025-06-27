@@ -3,20 +3,21 @@
 /*     fields so renderNode.ts keeps working)                         */
 /* ------------------------------------------------------------------ */
 export interface ChatNode {
-  id:        string;
-  template:  string | string[];
-  tag?:      string;
-  buttons?:  string[];
-  info?:     { title: string; body: string[]; link: string };
-  event?:     { img: string; checkIn: string; checkOut: string, ceremony: string, address: string, mapLink: string, overnight:Boolean };
-  auto?:     boolean;          // kept for backward-compat but no longer used
-  delayMs?:  number;
-  inquiry?:  boolean;
+  id: string;
+  template: string | string[];
+  tag?: string;
+  buttons?: string[];
+  info?: { title: string; body: string[]; link: string };
+  event?: { img: string; checkIn: string; checkOut: string, ceremony: string, address: string, mapLink: string, overnight: Boolean };
+  auto?: boolean;          // kept for backward-compat but no longer used
+  delayMs?: number;
+  inquiry?: boolean;
   concierge?: { img: string };
-  useGPT?:   boolean;
+  useGPT?: boolean;
 }
 
 import * as prompts from "./prompts";
+import { INTENTS } from "@/lib/intent";
 
 /* the original linear map of leaves – **unchanged** ---------------- */
 export const flow: Record<string, ChatNode> = {
@@ -29,11 +30,11 @@ export const flow: Record<string, ChatNode> = {
     auto: true,
   },
   concierge_intro: {
-    id:"concierge_intro",
+    id: "concierge_intro",
     tag: "concierge_intro",
-    concierge: {img:"/img/peep-17.svg",},                   // <-- новое поле
+    concierge: { img: "/img/peep-17.svg", },                   // <-- новое поле
     template: prompts.greeting,
-    buttons:["Поехали"],
+    buttons: ["Поехали"],
     useGPT: true
   },
   eventInfo_overnight: {
@@ -50,7 +51,7 @@ export const flow: Record<string, ChatNode> = {
       address: "Пушкинский район, поселок городского типа «Зеленоградский», ул.Ватутина 17",
       mapLink: "https://yandex.eu/maps/-/CHg5MRZF",
     },
-    buttons: ["Продолжить"]
+    buttons: ["Продолжай"]
   },
   eventInfo_ceremony: {
     id: "eventInfo_ceremony",
@@ -66,7 +67,7 @@ export const flow: Record<string, ChatNode> = {
       address: "Пушкинский район, поселок городского типа «Зеленоградский», ул.Ватутина 17",
       mapLink: "https://yandex.eu/maps/-/CHg5MRZF",
     },
-    buttons: ["Продолжить"]
+    buttons: ["Продолжай"]
   },
   schedule_1: {
     id: "schedule_1",
@@ -81,24 +82,34 @@ export const flow: Record<string, ChatNode> = {
   rsvp_ask: {
     id: "rsvp_ask",
     template: "Смoжете ли вы присоединиться к нам 6 мая?",
-    concierge: {img:"/img/peep-18.svg",}, 
-    tag: "rsvp",
+    concierge: { img: "/img/peep-18.svg", },
+    tag: "rsvp_ask",
     useGPT: false,
     inquiry: true,
     buttons: ["Да", "Нет"]
   },
-  rsvp_thanks: {
-    id: "rsvp_thanks",
+  rsvp_yes: {
+    id: "rsvp_yes",
     template: "Спасибо за ответ! 🥂",
+    useGPT: false
+  },
+  rsvp_no: {
+    id: "rsvp_no",
+    template: "Ответ не принимается! Подумайте еще 🥂",
     useGPT: false,
-    auto: true,
-    delayMs: 1000
+    buttons: ["Да", "Нет"]
+  },
+  rsvp_other: {
+    id: "rsvp_other",
+    template: "Скажите мне четко - вы придете?",
+    useGPT: false,
+    buttons: ["Да", "Нет"]
   },
   diet_ask: {
     id: "diet_ask",
     template: "Есть ли у тебя предпочтения в питании?",
     tag: "diet",
-    concierge: {img:"/img/peep-19.svg",}, 
+    concierge: { img: "/img/peep-19.svg", },
     useGPT: false,
     inquiry: true,
     buttons: ["Нет", "Вегетарианская", "Без глютена"]
@@ -175,32 +186,43 @@ export const flow: Record<string, ChatNode> = {
 /* 2.  Behaviour-tree primitives                                      */
 /* ------------------------------------------------------------------ */
 export type Condition = (ctx: any) => boolean | Promise<boolean>;
-export type Action    = (ctx: any, lastInput: string) => void | Promise<void>;
+export type Action = (ctx: any, lastInput: string) => void | Promise<void>;
 
 export type BTNode =
-  | { id: string; type: "leaf";
-      conditions?: Condition[];
-      onEnter?:    Action[];
-      onExit?:     Action[]; }
+  | {
+    id: string; type: "leaf";
+    conditions?: Condition[];
+    onEnter?: Action[];
+    onExit?: Action[];
+  }
 
-  | { id: string; type: "sequence" | "selector";
-      children:   BTNode[];
-      conditions?: Condition[];
-      onEnter?:    Action[];
-      onExit?:     Action[]; };
+  | {
+    id: string; type: "sequence" | "selector";
+    children: BTNode[];
+    conditions?: Condition[];
+    onEnter?: Action[];
+    onExit?: Action[];
+  };
 
 /* handy helpers you may reuse when writing new branches ------------- */
-export const once      = (tag: string): Condition => (ctx) =>
+export const once = (tag: string): Condition => (ctx) =>
   !(ctx.seen?.includes?.(tag));
 
-export const isStayingOvernight      = (tag: string): Condition => (ctx) =>
+export const isStayingOvernight = (tag: string): Condition => (ctx) =>
   Boolean(ctx.stays);
 
-export const isNotStayingOvernight      = (tag: string): Condition => (ctx) =>
+export const isNotStayingOvernight = (tag: string): Condition => (ctx) =>
   !Boolean(ctx.stays);
 
 export const slotFilled = (slot: string): Condition => (ctx) =>
   Boolean(ctx[slot]);
+
+export const slotNotFilled = (slot: string): Condition => (ctx) =>
+  Boolean(!ctx[slot]);
+
+export const intent = (tag: string): Condition => (ctx) => {
+  return Boolean(ctx.intent === tag);
+}
 
 export const typing = (ms: number): Action => async () =>
   new Promise((r) => setTimeout(r, ms));
@@ -209,8 +231,9 @@ export const typing = (ms: number): Action => async () =>
 import { updateGuest } from "./sheets";
 export const saveAnswer = (field: string): Action =>
   async (ctx, lastInput) => {
-    if (lastInput && ctx.rowNumber) {
-      await updateGuest(ctx.rowNumber, field, lastInput);
+    if (ctx.lastUserInput && ctx.rowNumber) {
+      ctx[field] = ctx.lastUserInput;
+      await updateGuest(ctx.rowNumber, field, ctx.lastUserInput);
     }
   };
 
@@ -222,7 +245,7 @@ export const tree: BTNode = {
   id: "root",
   type: "sequence",
   children: [
-    { id: "greeting",        type: "leaf", conditions: [once("greeting")], },
+    { id: "greeting", type: "leaf", conditions: [once("greeting")], },
     { id: "concierge_intro", type: "leaf", conditions: [once("concierge_intro")], },
     {
       id: "eventInfo_selector",
@@ -244,25 +267,36 @@ export const tree: BTNode = {
       id: "main",
       type: "sequence",
       children: [
-        { id: "schedule_1", type: "leaf" },
-
         {
-          id: "rsvp_selector",
+          id: "rsvp_block",
           type: "sequence",
+          conditions: [slotNotFilled("rsvp_ask")],
           children: [
+            { id: "rsvp_ask", type: "leaf", conditions: [once("rsvp_ask")] },
             {
-              id: "rsvp_thanks",
-              type: "leaf",
-              conditions: [slotFilled("rsvp_ask")],
-            },
-            {
-              id: "rsvp_ask",
-              type: "leaf",
-              onExit: [saveAnswer("rsvp_ask")],
-            },
-          ],
+              id: "rsvp_selector",
+              type: "selector",
+              children: [
+                {
+                  id: "rsvp_yes",
+                  type: "leaf",
+                  conditions: [intent(INTENTS.yes)],
+                  onEnter: [saveAnswer('rsvp_ask')]
+                },
+                {
+                  id: "rsvp_no",
+                  type: "leaf",
+                  conditions: [intent(INTENTS.no)],
+                },
+                {
+                  id: "rsvp_other",
+                  type: "leaf",
+                  onExit: [],
+                },
+              ],
+            }
+          ]
         },
-
         {
           id: "diet_selector",
           type: "selector",

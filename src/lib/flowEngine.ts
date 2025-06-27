@@ -154,4 +154,15 @@ export class FlowEngine {
     }
     return null;
   }
+
+  private async isPathStillValid(ctx: any): Promise<boolean> {
+    for (let i = 0; i < this.stack.length; i++) {
+      const frame = this.stack[i]!;
+      const ok = await pass(frame.node.conditions, ctx);
+      if (!ok) return false;
+    }
+    return true;
+  }
 }
+
+

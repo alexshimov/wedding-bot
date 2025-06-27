@@ -16,6 +16,12 @@ export async function POST(req: Request) {
     cache = Object.fromEntries(list.map((g) => [g.id, g]));
   }
 
+  const isFirstHit = body.state === "greeting" && (body.input ?? "").trim() === "";
+  if (isFirstHit) {
+    const list = await loadGuests();
+    cache = Object.fromEntries(list.map((g) => [g.id, g]));
+  }
+
   const guest = cache[guestId];
 
   if (!guest) {
@@ -31,41 +37,43 @@ export async function POST(req: Request) {
     });
   }
 
-  const isFirstHit = body.state === "greeting"   //  ваш старт-leaf
-    && (body.input ?? "").trim() === "";
-  if (isFirstHit) {
-    guest.seen = [];        // забываем, что уже показывали
-    guest.states = [];        // (если тоже нужно заново пройти дерево)
+  if (body.input.trim()) {                           // гость что-то ввёл
+    const node = flow[body.state];      // узел, который видит клиент
+    const isButton = node.buttons?.some(
+      b => b.toLowerCase() === body.input.trim().toLowerCase()
+    );
+
+    const tag = await detectIntent(body.input);
+    guest.intent = tag;
+    console.log("Intent: " + tag)
+
+    // if (tag !== "unknown" && flow[nodeId]) {                         // 1) узнали тег
+    //   const nodeId = INTENTS[tag];
+    //   const result = await runFlow(nodeId, "", guest); // идём прямо в узел
+    //   return Response.json(result);
+    // } else {
+    //   const result = await runFlow("unknown", body.input, guest);                                  // 2) не поняли
+    //   return Response.json(result);
+    // }
+
+    // console.log(node, isButton)
+
+    // if (body.input.trim() && !isButton) {
+    //   const tag = await detectIntent(body.input);
+    //   const nodeId = INTENTS[tag as Intent];
+
+    //   console.log("Intent: " + tag)
+
+    //   if (tag !== "unknown" && flow[nodeId]) {                         // 1) узнали тег
+    //     const nodeId = INTENTS[tag];
+    //     const result = await runFlow(nodeId, "", guest); // идём прямо в узел
+    //     return Response.json(result);
+    //   } else {
+    //     const result = await runFlow("unknown", body.input, guest);                                  // 2) не поняли
+    //     return Response.json(result);
+    //   }
+    // }
   }
-
-  // if (body.input.trim()) {                           // гость что-то ввёл
-  //   const node = flow[body.state];      // узел, который видит клиент
-  //   const isButton = node.buttons?.some(
-  //     b => b.toLowerCase() === body.input.trim().toLowerCase()
-  //   );
-  //   console.log(node, isButton)
-
-  //   if (node.inquiry) {
-  //     await updateGuest(guest.rowNumber, body.state, body.input.trim());
-  //   }
-  //   else {
-  //     if (body.input.trim() && !isButton) {
-  //       const tag = await detectIntent(body.input);
-  //       const nodeId = INTENTS[tag as Intent];
-
-  //       console.log("Intent: " + tag)
-
-  //       if (tag !== "unknown" && flow[nodeId]) {                         // 1) узнали тег
-  //         const nodeId = INTENTS[tag];
-  //         const result = await runFlow(nodeId, "", guest); // идём прямо в узел
-  //         return Response.json(result);
-  //       } else {
-  //         const result = await runFlow("unknown", body.input, guest);                                  // 2) не поняли
-  //         return Response.json(result);
-  //       }
-  //     }
-  //   }
-  // }
 
   /* run normal flow with ctx = guest */
   const res = await runFlow(body.state, body.input, guest);

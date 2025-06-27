@@ -42,6 +42,7 @@ export async function runFlow(stateId: string, input: string, ctx: any) {
   if (!Array.isArray(ctx.states)) ctx.states = [];
 
   /* 1️⃣  rebuild engine for the last leaf client told us about */
+  ctx.lastUserInput = input.trim();
   const engine = await FlowEngine.resume(stateId, ctx);
 
   /* 2️⃣  if guest just sent text – consume it and move on      */
