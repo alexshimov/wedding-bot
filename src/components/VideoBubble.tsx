@@ -40,9 +40,9 @@ export default function VideoBubble({
             <iframe
               className={`w-full h-full absolute inset-0
                           ${ready ? "opacity-100" : "opacity-0"}`}
-              src={`https://www.youtube.com/embed/${youtubeId}?rel=0`}
+              src={`https://www.youtube.com/embed/${youtubeId}?rel=0&autoplay=1&mute=1&playsinline=1`}
               title="YouTube video"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allow="autoplay; accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
               onLoad={() => setReady(true)}
             />
