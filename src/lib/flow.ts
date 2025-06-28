@@ -412,6 +412,7 @@ export const tree: BTNode = {
               id: "schedule",
               type: "leaf",
               conditions: [once("schedule")],
+              onEnter: [saveAnswer("story_complete")]
             },
           ],
         },
