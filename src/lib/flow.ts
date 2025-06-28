@@ -19,6 +19,7 @@ export interface ChatNode {
 
 import * as prompts from "./prompts";
 import { INTENTS } from "@/lib/intent";
+import { FACTS_TOTAL } from "./funFacts";   // ← добавьте строку наверху
 
 /* the original linear map of leaves – **unchanged** ---------------- */
 export const flow: Record<string, ChatNode> = {
@@ -219,64 +220,38 @@ export const flow: Record<string, ChatNode> = {
     },
     buttons: ["✨ Продолжить"]
   },
-  fun_fact_offer: {
-    id: "fun_fact_offer",
-    template: "Хочешь услышать забавный факт о нас?",
-    tag: "fun_fact",
-    useGPT: false,
-    buttons: ["Да", "Продолжить"]
-  },
   fun_fact: {
     id: "fun_fact",
-    template: "Дима сделал предложение на вершине вулкана Папандоян, пряча кольцо в коробочке с печеньем!",
-    useGPT: false,
-    auto: true,
-    delayMs: 1500
-  },
-  closing: {
-    id: "closing",
-    template: "До встречи 6 мая! Если понадобится помощь — просто напиши сюда.",
-    tag: "closing",
-    useGPT: false
-  },
-
-  /* ────────────── FAQ  ────────────── */
-  faq_venue: {
-    id: "faq_venue",
-    template: "Церемония в усадьбе «Середниково» (25 км от МКАД). При необходимости могу прислать карту!",
-    tag: "venue",
-    useGPT: false,
-    auto: true,
-    delayMs: 1200
-  },
-  faq_time: {
-    id: "faq_time",
-    template: "Начинаем ровно в 14:00. Приезжать можно с 13:30 — будет приветственный лимонад.",
-    tag: "faq_time",
-    useGPT: false,
-    auto: true,
-    delayMs: 1200
-  },
-  faq_route: {
-    id: "faq_route",
-    template: "От Шереметьево лучше всего такси (~35 мин) по платной трассе.",
-    tag: "venue",
-    useGPT: false,
-    auto: true,
-    delayMs: 1200
-  },
-
-  unknown: {
-    id: "unknown",
-    template: `Ты свадебный бот‑консьерж. Гость задаёт вопрос, на который у тебя пока нет информации.
-Твоя цель —:
-1. Вежливо извиниться, упомянув, что точного ответа нет.
-2. Кратко перефразировать суть вопроса гостя (1 предложение).
-3. Предложить вернуться к рассказу о предстоящей свадьбе.
-Ответь на русском, дружелюбно, одним‑двумя предложениями.`,
+    tag: "fun_fact",
+    template: prompts.fun_fact,
     useGPT: true,
-    auto: false,              // ← больше не прыгаем автоматически
-    buttons: ["Продолжить"]
+  },
+  fun_fact_random: {
+    id: "fun_fact_random",
+    template: "{dynamic}",
+    tag: "fun_fact_random",
+    useGPT: false,
+    buttons: ["Ещё факт", "Продолжить"],
+  },
+  fun_fact_first: {
+    id: "fun_fact_first",
+    template: "{dynamic}",
+    tag: "fun_fact_first",
+    useGPT: false,
+    buttons: ["Продолжить"],
+  },
+  fun_fact_empty: {
+    id: "fun_fact_empty",
+    template: "Похоже, все секреты уже раскрыты! 🎉",
+    useGPT: false,
+    buttons: ["Продолжить"],
+  },
+  idle_menu: {
+    id: "idle_menu",
+    tag: "idle_menu",
+    template: prompts.idle,
+    useGPT: false,
+    buttons: ["Подарки", "Пожелание", "Дресс-код"],
   },
 };
 
@@ -338,6 +313,18 @@ export const saveAnswer = (field: string): Action =>
       ctx[field] = ctx.lastUserInput;
       await updateGuest(ctx.rowNumber, field, ctx.lastUserInput);
     }
+  };
+
+export const appendAnswer = (field: string): Action =>
+  async (ctx, lastInput) => {
+    if (!ctx.lastUserInput?.trim() || !ctx.rowNumber) return;
+
+    /* берём то, что уже было в памяти или в Google Sheet */
+    const prev = ctx[field] ?? "";
+    const next = prev ? `${prev}\n${ctx.lastUserInput.trim()}` : ctx.lastUserInput.trim();
+
+    ctx[field] = next;                              // обновляем локальный ctx
+    await updateGuest(ctx.rowNumber, field, next);  // и саму ячейку
   };
 
 export const pushSlot = (field: string, value: string): Action =>
@@ -459,7 +446,7 @@ export const tree: BTNode = {
                 {
                   id: "wish",
                   type: "leaf",
-                  onEnter: [saveAnswer("wish")],
+                  onEnter: [appendAnswer("wish")],
                   conditions: [once("wish")]
                 },
                 {
@@ -477,8 +464,34 @@ export const tree: BTNode = {
             {
               id: "video_bonus",
               type: "leaf",
-              conditions: [once("video_bonus")],
-              onEnter: [saveAnswer("story_complete")]
+              conditions: [once("video_bonus")]
+            },
+            {
+              id: "fun_fact_selector",
+              type: "selector",
+              onEnter: [saveAnswer("story_complete")],
+              children: [
+                {
+                  id: "fun_fact_sequence",
+                  type: "sequence",
+                  conditions: [
+                    /* факты ещё есть */
+                    (ctx) => (ctx.funFactsUsed?.length ?? 0) < FACTS_TOTAL
+                  ],
+                  children: [
+                    {
+                      id: "fun_fact",
+                      type: "leaf",
+                      conditions: [once("fun_fact")]
+                    },
+                    {
+                      id: "fun_fact_first",
+                      type: "leaf",
+                    }
+                  ]
+                },
+                { id: "fun_fact_empty", type: "leaf" }
+              ]
             },
           ],
         },
@@ -488,6 +501,52 @@ export const tree: BTNode = {
       id: "freeform",
       type: "sequence",
       children: [
+        {
+          id: "wish_sequence",
+          type: "sequence",
+          children: [
+            {
+              id: "wish",
+              type: "leaf",
+              onEnter: [appendAnswer("wish")]
+            },
+            {
+              id: "wish_response",
+              type: "leaf"
+            },
+          ]
+        },
+        {
+          id: "greeting_repeat",
+          type: "leaf",
+          conditions: [once("greeting"), once("greeting_repeat")]
+        },
+        {
+          id: "fun_fact_selector",
+          type: "selector",
+          children: [
+            {
+              id: "fun_fact_sequence",
+              type: "sequence",
+              conditions: [
+                /* факты ещё есть */
+                (ctx) => (ctx.funFactsUsed?.length ?? 0) < FACTS_TOTAL
+              ],
+              children: [
+                {
+                  id: "fun_fact",
+                  type: "leaf",
+                  conditions: [once("fun_fact")]
+                },
+                {
+                  id: "fun_fact_random",
+                  type: "leaf",
+                }
+              ]
+            },
+            { id: "fun_fact_empty", type: "leaf" }
+          ]
+        },
         {
           id: "video_bonus",
           type: "leaf"
@@ -503,7 +562,7 @@ export const tree: BTNode = {
             {
               id: "wish",
               type: "leaf",
-              onEnter: [saveAnswer("wish")]
+              onEnter: [appendAnswer("wish")]
             },
             {
               id: "wish_response",
@@ -515,11 +574,7 @@ export const tree: BTNode = {
           id: "schedule",
           type: "leaf"
         },
-        {
-          id: "greeting_repeat",
-          type: "leaf",
-          conditions: [once("greeting"), once("greeting_repeat")]
-        },
+
         {
           id: "fun_fact_offer",
           type: "leaf"

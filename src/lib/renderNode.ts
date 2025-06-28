@@ -1,5 +1,6 @@
 import OpenAI from "openai";
 import type { ChatNode } from "@/lib/flow";
+import { nextFunFact } from "./nextFunFact";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
 
@@ -9,6 +10,10 @@ function fill(raw: string, ctx: any, userText: string) {
 
   if (raw === "{intro}" && !ctx.intro) {
     txt = `Привет, ${ctx.name}!`;
+  }
+
+  if (raw === "{dynamic}") {           // наш маркер
+    txt = nextFunFact(ctx); // если "" → покажем пустой шаблон
   }
 
   // simple placeholders
@@ -39,7 +44,7 @@ export async function renderNode(node: ChatNode, ctx: any, userText: string) {
         caption:  node.video.caption,
       });
     }
-    
+
     return out;
   }
   
