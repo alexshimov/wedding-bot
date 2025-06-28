@@ -50,13 +50,12 @@ export async function renderNode(node: ChatNode, ctx: any, userText: string) {
   
 
   /* GPT as a ‘glue’ layer: forward userText, but keep story prompt locked */
-  console.log('system', compiled, 'user', userText)
   const r = await openai.chat.completions.create({
     model: "gpt-4o-mini",
     temperature: 0.7,
     messages: [
       { role: "system", content: compiled },
-      { role: "user", content: userText },
+      // { role: "user", content: userText },
     ],
   });
   

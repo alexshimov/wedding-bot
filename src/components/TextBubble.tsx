@@ -21,7 +21,7 @@ export default function TextBubble({
 }) {
     /* ────────── typing effect ────────── */
   const shown = role === "bot"
-    ? useTyping(text, 10, onFinishTyping)   // 3-й аргумент — колбэк
+    ? useTyping(text, 20, onFinishTyping)   // 3-й аргумент — колбэк
     : text;
   /* ────────── auto-scroll while typing ────────── */
   const ref = useRef<HTMLDivElement | null>(null);

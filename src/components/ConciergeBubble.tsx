@@ -10,7 +10,7 @@ import rehypeSanitize from "rehype-sanitize";
 
 export default function ConciergeBubble({ msg, onFinishTyping, }: { msg: ChatMsg, onFinishTyping?: () => void; }) {
   /* ────────── typing effect ────────── */
-  const shown = useTyping(msg.text, 10, onFinishTyping);
+  const shown = useTyping(msg.text, 20, onFinishTyping);
   /* ────────── auto-scroll while typing ────────── */
   const ref = useRef<HTMLDivElement | null>(null);
   useEffect(() => {

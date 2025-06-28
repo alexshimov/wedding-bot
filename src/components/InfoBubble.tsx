@@ -41,7 +41,7 @@ export default function InfoBubble({ card }: { card: Extract<ChatMsg, { type: "i
     >
     <Message
       model={{ direction: "incoming", position: "single" }}
-      className="max-w-[90%]"
+      className="max-w-[100%]"
     >
       <Message.CustomContent>
         <div className="info-card">

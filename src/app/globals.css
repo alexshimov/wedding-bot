@@ -97,6 +97,15 @@ html::before{
   max-width: 100%;
 }
 
+.cs-message-list__scroll-wrapper {
+  padding:0;
+  padding-right: 16px;
+}
+
+.px-4 {
+  padding-right: 0px;
+}
+
 /* .cs-message--incoming .cs-message__content {
   background-color: transparent !important;
 }   */
@@ -405,6 +414,10 @@ html::before{
 
 /* 1. Сам <section class="cs-message …"> — растягиваем на всю строку */
 .cs-message--incoming:has(.tg-video){
+  max-width: 100% !important;  /* убираем ограничение 78 % из библиотеки */
+  width: 100% !important;
+}
+.cs-message--incoming:has(.info-card){
   max-width: 100% !important;  /* убираем ограничение 78 % из библиотеки */
   width: 100% !important;
 }
