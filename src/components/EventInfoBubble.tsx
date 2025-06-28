@@ -4,6 +4,8 @@ import Image from "next/image";
 import { ChatMsg } from "@/lib/types";
 import { motion } from "framer-motion";
 import { useEffect, useRef } from "react";
+import ReactMarkdown from "react-markdown";
+import rehypeSanitize from "rehype-sanitize";
 
 /**
  * Информационная карточка, отображаемая прямо внутри стандартного «пузыря».

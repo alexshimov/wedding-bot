@@ -4,6 +4,8 @@ import { motion } from "framer-motion";
 import Image from "next/image";
 import { ChatMsg } from "@/lib/types";
 import { useRef, useEffect } from "react";
+import ReactMarkdown from "react-markdown";
+import rehypeSanitize from "rehype-sanitize";
 
 /**
  * Информационная карточка, отображаемая прямо внутри стандартного «пузыря».
@@ -38,7 +40,7 @@ export default function InfoBubble({ card }: { card: Extract<ChatMsg, { type: "i
           )}
           {card.title && <h3 className="info-head">{card.title}</h3>}
           {card.body?.map((line, i) => (
-            <p key={i}>{line}</p>
+            <div key={i}><ReactMarkdown rehypePlugins={[rehypeSanitize]}>{line}</ReactMarkdown></div>
           ))}
           {card.link && (
             <a

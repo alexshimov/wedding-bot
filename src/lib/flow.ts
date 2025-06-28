@@ -7,7 +7,7 @@ export interface ChatNode {
   template: string | string[];
   tag?: string;
   buttons?: string[];
-  info?: { title: string; body: string[]; link: string };
+  info?: { title: string; body: string[]; link?: string, img: string };
   event?: { img: string; checkIn: string; checkOut: string, ceremony: string, address: string, mapLink: string, overnight: Boolean };
   auto?: boolean;          // kept for backward-compat but no longer used
   delayMs?: number;
@@ -78,16 +78,6 @@ export const flow: Record<string, ChatNode> = {
     },
     buttons: ["Продолжай"]
   },
-  schedule_1: {
-    id: "schedule_1",
-    template: `Наш день по плану:
-14:00 — церемония
-17:30 — ужин
-20:00 — первый танец и вечеринка`,
-    tag: "schedule",
-    useGPT: false,
-    buttons: ["Продолжить 2"]
-  },
   rsvp_ask: {
     id: "rsvp_ask",
     template: prompts.rsvp_ask,
@@ -133,6 +123,22 @@ export const flow: Record<string, ChatNode> = {
     template: prompts.diet_other,
     useGPT: true,
     buttons: ["🥩 Мясо", "🐟 Рыба"]
+  },
+  dress_code: {
+    id: "dress_code",
+    template: prompts.dress_code,
+    tag: "dress_code",
+    useGPT: false,
+    info: {
+      img: "/img/dress-code.png",
+      title: "Без пестрого пожалуйста!",
+      body: [
+        "**Цвета:** спокойные, нейтральные или пастельные оттенки.",
+        "**Избегаем** ярких принтов, крупных логотипов, джинсов и спортивных кроссовок.",
+        "**Мужчинам** — костюм или рубашка + брюки; **женщинам** — платье миди/комбинезон."
+      ]
+    },
+    buttons: ["Продолжай"]
   },
   fun_fact_offer: {
     id: "fun_fact_offer",
@@ -339,14 +345,19 @@ export const tree: BTNode = {
                   id: "diet_ok",
                   type: "leaf",
                   conditions: [intent(INTENTS.dietary_choice)],
-                  onEnter: [saveAnswer("diet_ask"), saveAnswer('story_complete'), pushSlot('diet', 'complete')]
+                  onEnter: [saveAnswer("diet_ask"), pushSlot('diet', 'complete')]
                 },
                 {
                   id: "diet_other",
                   type: "leaf"
                 },
               ],
-            }
+            },
+            {
+              id: "dress_code",
+              type: "leaf",
+              conditions: [once("dress_code")],
+            },
           ],
         },
       ]
@@ -355,6 +366,11 @@ export const tree: BTNode = {
       id: "freeform",
       type: "sequence",
       children: [
+        {
+          id: "dress_code",
+          type: "leaf",
+          conditions: [once("dress_code")],
+        },
         {
           id: "greeting_repeat",
           type: "leaf",
