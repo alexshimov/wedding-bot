@@ -269,7 +269,7 @@ export const flow: Record<string, ChatNode> = {
     tag: "idle_menu",
     template: prompts.idle,
     useGPT: false,
-    buttons: ["Подарки", "Пожелание", "Дресс-код"],
+    buttons: ["Подарки", "Пожелание", "Забавный факт"],
   },
   unknown: {
     id: "unknown",
