@@ -44,6 +44,7 @@ export async function runFlow(stateId: string, input: string, ctx: any) {
   /* 1️⃣  rebuild engine for the last leaf client told us about */
   ctx.lastUserInput = input.trim();
   const engine = await FlowEngine.resume(stateId, ctx);
+  console.log('await FlowEngine.resume(stateId, ctx)', stateId, engine.node().id);
 
   /* 2️⃣  if guest just sent text – consume it and move on      */
 
@@ -52,11 +53,13 @@ export async function runFlow(stateId: string, input: string, ctx: any) {
     if (engine.id() === stateId) {
       /* 2a. узел тот же — обычный путь */
       await engine.advance(userInput, ctx);
+      console.log('await engine.advance(userInput, ctx);', engine.node().id);
     } else {
       /* 2b. resume перескочил: ввод относится к ПРЕДЫДУЩЕМУ узлу */
       const prevNode = flow[stateId];
       /* если этот узел ожидал ответ — сохраняем его вручную */
       if (prevNode?.inquiry) ctx[prevNode.id] = userInput;
+      console.log('switched input prevNode', prevNode.id);
       /* можно дополнительно вызвать собственный обработчик,
          если нужно писать в Google Sheets:
          await prevNode.onExit?.forEach(fn => fn?.(ctx, userInput));
@@ -70,8 +73,10 @@ export async function runFlow(stateId: string, input: string, ctx: any) {
   for (let guard = 0; guard < 3; guard++) {
     const node: ChatNode = engine.node();          // current leaf
 
-    if (node.tag)
+    if (node.tag) {
+      console.log('ctx.seen.push(node.tag)', node.tag)
       ctx.seen.push(node.tag);
+    }
 
     /* render bubbles (unchanged renderNode helper) */
     messages.push(...(await renderNode(node, ctx, userInput)));
@@ -81,7 +86,7 @@ export async function runFlow(stateId: string, input: string, ctx: any) {
 
     /* otherwise auto-advance to next leaf */
     await engine.advance("", ctx);
-    console.log('loop', guard, engine.node())
+    console.log('await engine.advance("", ctx);', guard, engine.node().id)
   }
 
   return {

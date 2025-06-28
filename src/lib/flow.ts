@@ -93,18 +93,21 @@ export const flow: Record<string, ChatNode> = {
   },
   rsvp_yes: {
     id: "rsvp_yes",
+    tag: "rsvp_yes",
     template: prompts.rsvp_yes,
     useGPT: true,
     buttons: ["👉 Едем дальше!"]
   },
   rsvp_no: {
     id: "rsvp_no",
+    tag: "rsvp_no",
     template: prompts.rsvp_no,
     useGPT: true,
     buttons: ["✅ Конечно, да"]
   },
   rsvp_other: {
     id: "rsvp_other",
+    tag: "rsvp_other",
     template: prompts.rsvp_other,
     useGPT: true,
     buttons: ["✅ Конечно, да", "❌ Нет (лучше не нажимать!)"]
@@ -121,12 +124,14 @@ export const flow: Record<string, ChatNode> = {
   },
   diet_ok: {
     id: "diet_ok",
+    tag: "diet_ok",
     template: prompts.diet_ok,
     useGPT: true,
     buttons: ["👉 Отлично, едем дальше!"]
   },
   diet_other: {
     id: "diet_other",
+    tag: "diet_other",
     template: prompts.diet_other,
     useGPT: true,
     buttons: ["🥩 Мясо", "🐟 Рыба"]
@@ -152,6 +157,7 @@ export const flow: Record<string, ChatNode> = {
     id: "gifts",
     template: prompts.gifts,
     useGPT: true,
+    tag: 'gifts',
     info: {
       img: "/img/bank-details.png",
       title: "Реквизиты для подарка",
@@ -164,12 +170,14 @@ export const flow: Record<string, ChatNode> = {
   },
   alcohol: {
     id: "alcohol",
+    tag: "alcohol",
     template: prompts.alcohol,
     useGPT: true,
     buttons: ["👌 Принято, Кузя!"]
   },
   schedule: {
     id: "schedule",
+    tag: "schedule",
     template: prompts.schedule,
     useGPT: false,
     info: {
@@ -189,12 +197,14 @@ export const flow: Record<string, ChatNode> = {
   },
   wish: {
     id: "wish",
+    tag: "wish",
     template: prompts.wish,
     useGPT: true,
     inquiry: true
   },
   wish_response: {
     id: "wish_response",
+    tag: "wish_response",
     template: prompts.wish_response,
     useGPT: true,
     buttons: ["✨ Продолжить"]
@@ -202,6 +212,7 @@ export const flow: Record<string, ChatNode> = {
   contacts: {
     id: "contacts",
     template: prompts.contacts,
+    tag: "contacts",
     useGPT: true,
     buttons: ["✨ Продолжить"],
     info: {
@@ -217,6 +228,7 @@ export const flow: Record<string, ChatNode> = {
   },
   video_bonus: {
     id: "video_bonus",
+    tag: "video_bonus",
     template: "А вот и обещанный сюрприз – маленький тизер свадьбы!",
     useGPT: false,
     video: {
@@ -247,6 +259,7 @@ export const flow: Record<string, ChatNode> = {
   },
   fun_fact_empty: {
     id: "fun_fact_empty",
+    tag: "fun_fact_empty",
     template: "Похоже, все секреты уже раскрыты! 🎉",
     useGPT: false,
     buttons: ["Продолжить"],
@@ -303,10 +316,13 @@ export const isStayingOvernight = (tag: string): Condition => (ctx) =>
 export const isNotStayingOvernight = (tag: string): Condition => (ctx) =>
   !Boolean(ctx.stays);
 
-export const slotFilled = (slot: string): Condition => (ctx) =>
-  Boolean(ctx[slot]);
+export const slotFilled = (slot: string): Condition => (ctx) => {
+  console.log('slotFilled', slot, ctx[slot], Boolean(ctx[slot]))
+  return Boolean(ctx[slot]);
+}
 
 export const slotNotFilled = (slot: string): Condition => (ctx) => {
+  console.log('slotNotFilled', slot, ctx[slot], Boolean(!ctx[slot]))
   return Boolean(!ctx[slot]);
 }
 
@@ -334,6 +350,7 @@ import { updateGuest } from "./sheets";
 export const saveAnswer = (field: string): Action =>
   async (ctx, lastInput) => {
     if (ctx.lastUserInput && ctx.rowNumber) {
+      console.log('saveAnswer', field, ctx.lastUserInput )
       ctx[field] = ctx.lastUserInput;
       await updateGuest(ctx.rowNumber, field, ctx.lastUserInput);
     }
@@ -353,7 +370,9 @@ export const appendAnswer = (field: string): Action =>
 
 export const pushSlot = (field: string, value: string): Action =>
   async (ctx, lastInput) => {
+    
     ctx[field] = value;
+    console.log('pushSlot', field, value,ctx[field] )
   };
 
 /* ------------------------------------------------------------------ */
@@ -493,7 +512,6 @@ export const tree: BTNode = {
             {
               id: "fun_fact_selector",
               type: "selector",
-              onEnter: [saveAnswer("story_complete")],
               children: [
                 {
                   id: "fun_fact_sequence",
@@ -510,6 +528,7 @@ export const tree: BTNode = {
                     },
                     {
                       id: "fun_fact_first",
+                      onEnter: [saveAnswer("story_complete")],
                       type: "leaf",
                     }
                   ]
@@ -524,6 +543,7 @@ export const tree: BTNode = {
     {
       id: "freeform",
       type: "sequence",
+      conditions: [slotFilled('story_complete')],
       children: [
         {
           id: "greeting_repeat",

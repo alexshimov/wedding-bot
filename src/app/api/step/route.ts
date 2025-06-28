@@ -20,6 +20,7 @@ export async function POST(req: Request) {
   if (isFirstHit) {
     const list = await loadGuests();
     cache = Object.fromEntries(list.map((g) => [g.id, g]));
+    console.log('RELOAD')
   }
 
   const guest = cache[guestId];

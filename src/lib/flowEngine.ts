@@ -31,7 +31,7 @@ export class FlowEngine {
     // fire onEnter along the rebuilt path
     for (const f of eng.stack) {
       if (!f.entered) {
-        //await run(f.node.onEnter, ctx, "");
+        await run(f.node.onEnter, ctx, "");
         f.entered = true;
       }
     }

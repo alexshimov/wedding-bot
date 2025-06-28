@@ -93,9 +93,9 @@ export async function detectIntent(input: string, allowed: Intent[] = Object.key
   }
 
   /* 1️⃣  моментальная проверка RegExp */
-  // for (const k of TAGS) if (INTENT_PATTERNS[k].some(rx => rx.test(text))) return k;
+  for (const k of TAGS) if (INTENT_PATTERNS[k].some(rx => rx.test(text))) return k;
 
-  console.log(input)
+  console.log('detectIntent', input)
 
   const intentFn = {
     name: "return_intent",
