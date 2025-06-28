@@ -192,6 +192,22 @@ export const flow: Record<string, ChatNode> = {
     useGPT: true,
     buttons: ["✨ Продолжить"]
   },
+  contacts: {
+    id: "contacts",
+    template: prompts.contacts,
+    useGPT: true,
+    buttons: ["✨ Продолжить"],
+    info: {
+      img: "/img/contacts.png",
+      title: "Контакты организатора",
+      body: [
+        "📍 Организатор: **Анна**",
+        "📱 Telegram / WhatsApp: **+7 (963) 508-42-00**",
+        "⏰ На связи: до и во время мероприятия",
+        "🆘 Любые вопросы, проблемы, помощь"
+      ]
+    },
+  },
   fun_fact_offer: {
     id: "fun_fact_offer",
     template: "Хочешь услышать забавный факт о нас?",
@@ -443,6 +459,11 @@ export const tree: BTNode = {
                 },
               ]
             },
+            {
+              id: "contacts",
+              type: "leaf",
+              conditions: [once("contacts")]
+            },
           ],
         },
       ]
@@ -451,6 +472,10 @@ export const tree: BTNode = {
       id: "freeform",
       type: "sequence",
       children: [
+        {
+          id: "contacts",
+          type: "leaf"
+        },
         {
           id: "wish_sequence",
           type: "sequence",

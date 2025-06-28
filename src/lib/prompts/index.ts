@@ -15,4 +15,5 @@ export { default as alcohol } from "./alcohol";
 export { default as schedule } from "./schedule";
 export { default as wish } from "./wish";
 export { default as wish_response } from "./wish_response";
+export { default as contacts } from "./contacts";
 
