@@ -180,6 +180,18 @@ export const flow: Record<string, ChatNode> = {
     },
     buttons: ["👌 Понятно, едем дальше!"]
   },
+  wish: {
+    id: "wish",
+    template: prompts.wish,
+    useGPT: true,
+    inquiry: true
+  },
+  wish_response: {
+    id: "wish_response",
+    template: prompts.wish_response,
+    useGPT: true,
+    buttons: ["✨ Продолжить"]
+  },
   fun_fact_offer: {
     id: "fun_fact_offer",
     template: "Хочешь услышать забавный факт о нас?",
@@ -414,6 +426,23 @@ export const tree: BTNode = {
               conditions: [once("schedule")],
               onEnter: [saveAnswer("story_complete")]
             },
+            {
+              id: "wish_sequence",
+              type: "sequence",
+              children: [
+                {
+                  id: "wish",
+                  type: "leaf",
+                  onEnter: [saveAnswer("wish")],
+                  conditions: [once("wish")]
+                },
+                {
+                  id: "wish_response",
+                  type: "leaf",
+                  conditions: [once("wish_response")]
+                },
+              ]
+            },
           ],
         },
       ]
@@ -422,6 +451,21 @@ export const tree: BTNode = {
       id: "freeform",
       type: "sequence",
       children: [
+        {
+          id: "wish_sequence",
+          type: "sequence",
+          children: [
+            {
+              id: "wish",
+              type: "leaf",
+              onEnter: [saveAnswer("wish")]
+            },
+            {
+              id: "wish_response",
+              type: "leaf"
+            },
+          ]
+        },
         {
           id: "schedule",
           type: "leaf"
