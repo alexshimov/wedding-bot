@@ -30,8 +30,19 @@ export async function renderNode(node: ChatNode, ctx: any, userText: string) {
     
     const out: any[] = [{ role: "bot", type: "text", text: compiled }];
     if (node.info) out.push({ role: "bot", type: "info", ...node.info });
+
+    if (node.video) {
+      out.push({
+        role: "bot",
+        type: "video",
+        youtubeId: node.video.id,
+        caption:  node.video.caption,
+      });
+    }
+    
     return out;
   }
+  
 
   /* GPT as a ‘glue’ layer: forward userText, but keep story prompt locked */
   console.log('system', compiled, 'user', userText)

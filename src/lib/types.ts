@@ -1,11 +1,13 @@
 export interface ChatMsg {
   id: string;
   role: "bot" | "guest";
-  type: "text" | "info" | "typing" | "concierge" | "event";  // ← новое значение
+  type: "text" | "info" | "typing" | "concierge" | "event" | "video";  // ← новое значение
   text?: string;
   title?: string;
   body?: string[];
   img?: string;
+  youtubeId?: string;   // «dQw4w9WgXcQ»
+  caption?: string;
 }
 
   export interface ChatState {

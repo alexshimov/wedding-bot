@@ -14,6 +14,7 @@ export interface ChatNode {
   inquiry?: boolean;
   concierge?: { img: string };
   useGPT?: boolean;
+  video?: { id: string, caption: string }
 }
 
 import * as prompts from "./prompts";
@@ -207,6 +208,16 @@ export const flow: Record<string, ChatNode> = {
         "🆘 Любые вопросы, проблемы, помощь"
       ]
     },
+  },
+  video_bonus: {
+    id: "video_bonus",
+    template: "А вот и обещанный сюрприз – маленький тизер свадьбы!",
+    useGPT: false,
+    video: {
+      id: "bg8-z9cNk4s",
+      caption: "Короткий ролик с места росписи 🌿",
+    },
+    buttons: ["✨ Продолжить"]
   },
   fun_fact_offer: {
     id: "fun_fact_offer",
@@ -461,7 +472,12 @@ export const tree: BTNode = {
             {
               id: "contacts",
               type: "leaf",
-              conditions: [once("contacts")],
+              conditions: [once("contacts")]
+            },
+            {
+              id: "video_bonus",
+              type: "leaf",
+              conditions: [once("video_bonus")],
               onEnter: [saveAnswer("story_complete")]
             },
           ],
@@ -472,6 +488,10 @@ export const tree: BTNode = {
       id: "freeform",
       type: "sequence",
       children: [
+        {
+          id: "video_bonus",
+          type: "leaf"
+        },
         {
           id: "contacts",
           type: "leaf"

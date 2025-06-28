@@ -9,7 +9,9 @@ import InfoBubble from "@/components/InfoBubble";
 import TypingBubble from "@/components/TypingBubble";
 import ConciergeBubble from "@/components/ConciergeBubble";
 import EventInfoBubble from "@/components/EventInfoBubble";
+import VideoBubble from "@/components/VideoBubble";
 import { useChat } from "./useChat";
+
 
 let hasBooted = false; 
 
@@ -76,6 +78,15 @@ export default function ChatClient({
               return <TypingBubble key={m.id} />;
             if (m.type === "concierge")
               return <ConciergeBubble key={m.id} msg={m} onFinishTyping={flushNext} />;
+            if (m.type === "video")
+              return (
+                <VideoBubble
+                  key={m.id}
+                  id={m.id}
+                  youtubeId={m.youtubeId!}
+                  caption={m.caption}
+                />
+              );
             return null;
           })}
           <div ref={bottomRef} />
