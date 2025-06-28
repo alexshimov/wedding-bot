@@ -11,7 +11,7 @@ export interface ChatNode {
   template: string | string[];
   tag?: string;
   buttons?: string[];
-  info?: { title: string; body: string[]; link?: string, img: string };
+  info?: { title?: string; body?: string[]; link?: string, img: string };
   event?: { img: string; checkIn: string; checkOut: string, ceremony: string, address: string, mapLink: string, overnight: Boolean };
   auto?: boolean;          // kept for backward-compat but no longer used
   delayMs?: number;
@@ -229,12 +229,16 @@ export const flow: Record<string, ChatNode> = {
   video_bonus: {
     id: "video_bonus",
     tag: "video_bonus",
-    template: "А вот и обещанный сюрприз – маленький тизер свадьбы!",
+    template: "А вот и обещанный сюрприз... Серьезно думали, что покажу вам образы молодоженов?",
     useGPT: false,
-    video: {
-      id: "bg8-z9cNk4s",
-      caption: "Короткий ролик с места росписи 🌿",
+    info: {
+      img: "/img/rospis.png",
+
     },
+    // video: {
+    //   id: "bg8-z9cNk4s",
+    //   caption: "Короткий ролик с места росписи 🌿",
+    // },
     buttons: ["✨ Продолжить"]
   },
   fun_fact: {
@@ -405,6 +409,11 @@ export const tree: BTNode = {
       type: "sequence",
       conditions: [isIntroNotComplete()],
       children: [
+        {
+          id: "video_bonus",
+          type: "leaf",
+          conditions: [once("video_bonus")]
+        },
         { id: "greeting", type: "leaf", conditions: [once("greeting")], },
         { id: "concierge_intro", type: "leaf", conditions: [once("concierge_intro")], },
         {

@@ -318,6 +318,11 @@ html::before{
 .info-head{
   font:600 1.05rem/1.3 Inter,system-ui,sans-serif;
   margin-bottom:.6rem;
+  margin-top: 0.5cm;
+}
+
+.event-head{
+  margin-top: 1rem;
 }
 
 /* базовые настройки списка */
@@ -360,11 +365,11 @@ html::before{
  .info-card > img:first-child{
   margin-left:-1.25rem;
   margin-top:-1.25rem;
+  margin-bottom:-0.5rem;
   width:calc(100% + 1.75rem);
   max-width:calc(100% + 1.75rem);
   border-top-left-radius:inherit;
   border-bottom-left-radius:inherit;
-  margin-bottom:.8rem;
 } 
 
 /* Ссылки в карточке */
