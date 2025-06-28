@@ -10,3 +10,4 @@ export { default as diet_ok } from "./diet_ok";
 export { default as diet_other } from "./diet_other";
 export { default as greeting_repeat } from "./greeting_repeat";
 export { default as dress_code } from "./dress_code";
+export { default as gifts } from "./gifts";

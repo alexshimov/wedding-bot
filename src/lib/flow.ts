@@ -140,6 +140,20 @@ export const flow: Record<string, ChatNode> = {
     },
     buttons: ["Продолжай"]
   },
+  gifts: {
+    id: "gifts",
+    template: prompts.gifts,
+    useGPT: true,
+    info: {
+      img: "/img/bank-details.png",
+      title: "Реквизиты для подарка",
+      body: [
+        "Если вам удобнее поздравить Олю и Сашу переводом — вот их реквизиты:",
+        "🏦 Т-Банк – **+7 963 643 16 82** (Александр Ш.)",
+      ]
+    },
+    buttons: ["👍 Понятно, продолжаем"]
+  },
   fun_fact_offer: {
     id: "fun_fact_offer",
     template: "Хочешь услышать забавный факт о нас?",
@@ -358,6 +372,11 @@ export const tree: BTNode = {
               type: "leaf",
               conditions: [once("dress_code")],
             },
+            {
+              id: "gifts",
+              type: "leaf",
+              conditions: [once("gifts")],
+            },
           ],
         },
       ]
@@ -367,9 +386,8 @@ export const tree: BTNode = {
       type: "sequence",
       children: [
         {
-          id: "dress_code",
-          type: "leaf",
-          conditions: [once("dress_code")],
+          id: "gifts",
+          type: "leaf"
         },
         {
           id: "greeting_repeat",

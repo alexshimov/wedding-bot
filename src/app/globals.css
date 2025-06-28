@@ -382,3 +382,10 @@ html::before{
 .markdown h2   { @apply text-base font-bold; }
 .markdown p    { @apply mb-2;              }
 .markdown ul   { @apply list-disc pl-5;    }
+
+.markdown strong, strong{
+  font-weight: 700;
+  background: linear-gradient(0deg,var(--accent-from),var(--accent-to));
+  -webkit-background-clip: text;   /* вырезаем фон по контуру букв */
+  -webkit-text-fill-color: transparent;
+}
