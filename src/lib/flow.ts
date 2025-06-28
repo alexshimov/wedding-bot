@@ -25,6 +25,7 @@ export const flow: Record<string, ChatNode> = {
   greeting: {
     id: "greeting",
     tag: "greeting",
+    concierge: { img: "/img/bride-groom.png", },
     template: "{intro}",
     useGPT: false,
     auto: true,
@@ -81,45 +82,49 @@ export const flow: Record<string, ChatNode> = {
   },
   rsvp_ask: {
     id: "rsvp_ask",
-    template: "Смoжете ли вы присоединиться к нам 6 мая?",
+    template: prompts.rsvp_ask,
     concierge: { img: "/img/peep-18.svg", },
     tag: "rsvp_ask",
-    useGPT: false,
-    inquiry: true,
-    buttons: ["Да", "Нет"]
+    useGPT: true,
+    buttons: ["✅ Конечно, да", "❌ Нет (лучше не нажимать!)"]
   },
   rsvp_yes: {
     id: "rsvp_yes",
-    template: "Спасибо за ответ! 🥂",
-    useGPT: false
+    template: prompts.rsvp_yes,
+    useGPT: true,
+    buttons: ["👉 Едем дальше!"]
   },
   rsvp_no: {
     id: "rsvp_no",
-    template: "Ответ не принимается! Подумайте еще 🥂",
-    useGPT: false,
-    buttons: ["Да", "Нет"]
+    template: prompts.rsvp_no,
+    useGPT: true,
+    buttons: ["✅ Конечно, да"]
   },
   rsvp_other: {
     id: "rsvp_other",
-    template: "Скажите мне четко - вы придете?",
-    useGPT: false,
-    buttons: ["Да", "Нет"]
+    template: prompts.rsvp_other,
+    useGPT: true,
+    buttons: ["✅ Конечно, да", "❌ Нет (лучше не нажимать!)"]
   },
   diet_ask: {
     id: "diet_ask",
-    template: "Есть ли у тебя предпочтения в питании?",
-    tag: "diet",
+    template: prompts.diet_ask,
+    tag: "diet_ask",
     concierge: { img: "/img/peep-19.svg", },
-    useGPT: false,
-    inquiry: true,
-    buttons: ["Нет", "Вегетарианская", "Без глютена"]
+    useGPT: true,
+    buttons: ["🥩 Мясо", "🐟 Рыба"]
   },
-  diet_thanks: {
-    id: "diet_thanks",
-    template: "Учтём это при подготовке меню!",
-    useGPT: false,
-    auto: true,
-    delayMs: 1000
+  diet_ok: {
+    id: "diet_ok",
+    template: prompts.diet_ok,
+    useGPT: true,
+    buttons: ["👉 Отлично, едем дальше!"]
+  },
+  diet_other: {
+    id: "diet_other",
+    template: prompts.diet_other,
+    useGPT: true,
+    buttons: ["🥩 Мясо", "🐟 Рыба"]
   },
   fun_fact_offer: {
     id: "fun_fact_offer",
@@ -303,16 +308,22 @@ export const tree: BTNode = {
         {
           id: "diet_selector",
           type: "selector",
+          conditions: [slotNotFilled("diet_ask")],
           children: [
-            {
-              id: "diet_thanks",
-              type: "leaf",
-              conditions: [slotFilled("diet_ask")],
-            },
             {
               id: "diet_ask",
               type: "leaf",
-              onExit: [saveAnswer("diet_ask")],
+              conditions: [once("diet_ask")],
+            },
+            {
+              id: "diet_ok",
+              type: "leaf",
+              conditions: [intent(INTENTS.dietary_choice)],
+              onEnter: [saveAnswer("diet_ask")]
+            },
+            {
+              id: "diet_other",
+              type: "leaf"
             },
           ],
         },

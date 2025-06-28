@@ -14,6 +14,7 @@ export const INTENTS = {
   yes:        "yes",       // «Да»
   no:         "no",        // «Нет»
   continue:   "continue",       // «Поехали», «Дальше»
+  dietary_choice:   "dietary_choice",       // мясо, рыба и тп
   dresscode:  "dresscode",  // Какой дресс-код?
   route:      "route",      // Как проехать?
   venue:      "venue",      // Где (адрес)?
@@ -31,7 +32,7 @@ const INTENT_PATTERNS: Record<Intent, RegExp[]> = {
     /^(нет|неа|увы|не смогу|к сожалению)/i,
   ],
   continue: [
-    /(дальше|продолжить|поехали|go on|окей|ok|готов)/i,
+    /(дальше|продолжить|детали|поехали|go on|окей|ok|готов)/i,
   ],
   dresscode: [
     /(dress.?code|дресс.?код|во.?что|одеться|наряд)/i,
@@ -44,6 +45,22 @@ const INTENT_PATTERNS: Record<Intent, RegExp[]> = {
   ],
   time: [
     /(когда|во\s*сколько|начало|тайминг|расписание)/i,
+  ],
+  dietary_choice: [
+    // вегетарианство / веганство
+    /(веган|вегетариан(ец|ка|ство)|plant.?based)/i,
+
+    // «без …»
+    /(без\s*(мяса|рыбы|глютена|лактозы|молока|орехов|sea\s*food|seafood))/i,
+
+    // прямое указание предпочтения
+    /(ем|предпочитаю|люблю).*(только)?\s*(мясо|рыбу|рыбку|птицу|овощи)/i,
+
+    // английские short‑формы
+    /(meat|fish|pescatarian|vegan|vegetarian|gluten[- ]?free|lactose[- ]?free)/i,
+
+    // аллергии
+    /(аллерги(я|и)\s*на\s*(глютен|орехи|молоко|лактозу|морепродукты|seafood))/i,
   ],
 };
 

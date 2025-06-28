@@ -10,19 +10,30 @@ export function useChat(start: string, ctx: any, guestId: string) {
   const [msgs, setMsgs] = useState<ChatMsg[]>([]);
   const [buttons, setButtons] = useState<string[]>([]);
   const [state, setState] = useState(start);
+  const [busy, setBusy] = useState(false);
 
   /* очередь живёт во вне-React ref */
   const q = useRef<ChatMsg[]>([]);
   const timer = useRef<NodeJS.Timeout>();
 
+  /* helper: снимаем блокировку,
+   когда больше нет тайпинга и очередь пуста */
+  const maybeUnlock = useCallback(() => {
+    if (q.current.length === 0) setBusy(false);
+  }, []);
+
   /* ---------- показывает typing на TYPING_MS и потом next() ---------- */
   const showTypingThen = useCallback((next: () => void) => {
+    setBusy(true);
+
     setMsgs(m => [...m, withId({ role: "bot", type: "typing" })]);
     timer.current = setTimeout(() => {
       setMsgs(m => m.filter(x => x.type !== "typing"));
       next();
+      // вдруг очередь уже пуста:
+      maybeUnlock();
     }, TYPING_MS);
-  }, []);
+  }, [maybeUnlock]);
 
   /* ---------- выводит один элемент из очереди ---------- */
   const playNext = useCallback(() => {
@@ -46,6 +57,7 @@ export function useChat(start: string, ctx: any, guestId: string) {
   /* ---------- when useTyping finishes ---------- */
   const flushNext = useCallback(() => {
     if (q.current.length) showTypingThen(playNext);
+    else maybeUnlock();
   }, [playNext, showTypingThen]);
 
   /* ---------- кладём элементы и, если idle, стартуем ---------- */
@@ -56,6 +68,9 @@ export function useChat(start: string, ctx: any, guestId: string) {
 
   /* ---------- основной step() ---------- */
   async function step(input: string) {
+    if (busy) return;
+    setBusy(true); 
+
     if (input.trim())
       setMsgs(m => [...m, withId({ role: "guest", type: "text", text: input.trim() })]);
 
@@ -67,6 +82,8 @@ export function useChat(start: string, ctx: any, guestId: string) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id: guestId, state, input, ctx }),
     }).then(r => r.json());
+
+    if (res.messages.length === 0) setBusy(false);
 
     setMsgs(m => m.filter(x => x.type !== "typing"));     // убираем placeholder
     setButtons(res.buttons ?? []);
@@ -82,5 +99,5 @@ export function useChat(start: string, ctx: any, guestId: string) {
   /* ---------- чистим таймер при размонтировании ---------- */
   useEffect(() => () => clearTimeout(timer.current), []);
 
-  return { msgs, buttons, step, flushNext };
+  return { msgs, buttons, step, flushNext, busy };
 }

@@ -1,3 +1,10 @@
 export { default as greeting } from "./greeting";
 export { default as eventInfo_overnight } from "./eventInfo_overnight";
 export { default as eventInfo_ceremony } from "./eventInfo_ceremony";
+export { default as rsvp_ask } from "./rsvp_ask";
+export { default as rsvp_no } from "./rsvp_no";
+export { default as rsvp_yes } from "./rsvp_yes";
+export { default as rsvp_other } from "./rsvp_other";
+export { default as diet_ask } from "./diet_ask";
+export { default as diet_ok } from "./diet_ok";
+export { default as diet_other } from "./diet_other";

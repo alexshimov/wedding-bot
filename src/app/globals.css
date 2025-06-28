@@ -103,6 +103,10 @@ html::before{
 
 /* ---------------- TELEGRAM BUBBLES ---------------- */
 
+.cs-message:only-child {
+  margin: 0.5em 0 0 0;
+}
+
 .cs-message__content{
   /* every bubble (in & out) */
   padding:.5rem .85rem;
@@ -138,6 +142,10 @@ html::before{
 }
 .quick-chip:hover{
   filter:brightness(1.08);
+}
+.quick-chip[disabled]{
+  /* чуть темнее и неприступно */
+  filter: grayscale(.3) opacity(.6);
 }
 
 /* typing indicator -------------------------------------------------------- */
@@ -347,7 +355,8 @@ html::before{
 }
 
 .concierge-img{
-  width:160px;
+  height:160px;
+  width: auto;
   margin-bottom: -0.5rem;
   filter:drop-shadow(0 4px 8px rgba(0,0,0,.35));
 }

@@ -2,9 +2,11 @@
 export default function QuickReplies({
   options,
   onPick,
+  disabled = false,
 }: {
   options: string[];
   onPick: (value: string) => void;
+  disabled?: boolean;
 }) {
   if (!options?.length) return null;
 
@@ -13,8 +15,12 @@ export default function QuickReplies({
       {options.map((opt) => (
         <button
           key={opt}
+          disabled={disabled}
           onClick={() => onPick(opt)}
-          className="quick-chip"
+          className={
+            "quick-chip " +
+            (disabled ? "opacity-40 cursor-default pointer-events-none" : "")
+          }
         >
           {opt}
         </button>

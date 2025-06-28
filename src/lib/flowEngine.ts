@@ -1,35 +1,34 @@
 /**********************************************************************
- * Behaviour-tree engine (sequence + selector)
- * — guarantees: whenever you call node() the top frame is a LEAF —
+ * 100 % spec‑compliant Behaviour‑Tree cursor
+ *   – every public call keeps engine.node() = current leaf
  *********************************************************************/
 
 import { tree, flow, BTNode, ChatNode, Condition, Action } from "./flow";
 
-/* helpers ­───────────────────────────────────────────────────────── */
-interface Frame {
-  node: BTNode;
-  index: number;        // active child for composites; 0 for leaves
-  entered: boolean;     // have we fired onEnter?
-}
-const pass = async (cs: Condition[] | undefined, ctx: any) =>
-  !cs?.length || (await Promise.all(cs.map((c) => c(ctx)))).every(Boolean);
+/* ─── helpers ────────────────────────────────────────────────────── */
+type Frame = { node: BTNode; index: number; entered: boolean };
 
-const run = async (as: Action[] | undefined, ctx: any, txt: string) => {
-  if (as?.length) for (const a of as) await a(ctx, txt);
+const pass = async (conds: Condition[] | undefined, ctx: any) =>
+  !conds?.length || (await Promise.all(conds.map(c => c(ctx)))).every(Boolean);
+
+const run = async (acts: Action[] | undefined, ctx: any, txt: string) => {
+  if (acts?.length) for (const a of acts) await a(ctx, txt);
 };
 
-/* engine ­────────────────────────────────────────────────────────── */
+/* ─── engine ─────────────────────────────────────────────────────── */
 export class FlowEngine {
-  private stack: Frame[] = [];
+  private stack: Frame[] = [];          // root → … → current leaf
 
-  /** async factory – reconstruct cursor, re-check conditions */
-  static async resume(stateId: string, ctx: any) {
+  /* ---------- static factory ------------------------------------- */
+  static async resume(leafId: string, ctx: any) {
     const eng = new FlowEngine();
-    let okPath = await eng.pathToLeaf(tree, ctx, stateId); // exact leaf id
-    if (!okPath) okPath = await eng.pathToLeaf(tree, ctx); // first legal leaf
-    if (!okPath) throw new Error("BT has no valid leaf");
+    eng.stack =
+      (await eng.path(tree, ctx, leafId)) ||    // try exact same leaf
+      (await eng.path(tree, ctx));              // else: first legal leaf
 
-    eng.stack = okPath;
+    if (!eng.stack.length) throw new Error("BT: no valid leaf");
+
+    // fire onEnter along the rebuilt path
     for (const f of eng.stack) {
       if (!f.entered) {
         await run(f.node.onEnter, ctx, "");
@@ -39,120 +38,89 @@ export class FlowEngine {
     return eng;
   }
 
-  /* external API – unchanged ­───────────────────────────────────── */
-  node(): ChatNode {
-    return flow[this.stack[this.stack.length - 1]!.node.id];
-  }
-  id() {
-    return this.node().id;
-  }
+  /* ---------- public API ----------------------------------------- */
+  node(): ChatNode                { return flow[this.leaf().node.id]; }
+  id()                            { return  this.leaf().node.id;      }
 
-  /* advance one leaf ­───────────────────────────────────────────── */
+  /** tick the tree once, optionally feeding user input */
   async advance(userInput: string, ctx: any) {
-    if (!(await this.isPathStillValid(ctx))) {
-      // пробуем остаться на том же leaf; если он недоступен —
-      // берём первый валидный лист от корня
-      const fresh =
-        (await this.pathToLeaf(tree, ctx, this.id())) ||
-        (await this.pathToLeaf(tree, ctx));
+    /* 0.  if the current path broke → rebuild & exit (no input yet) */
+    if (!(await this.pathValid(ctx))) {
+      this.stack = (await this.path(tree, ctx))!;
+      return;
+    }
 
-      if (!fresh) throw new Error("BT: cannot rebuild after ctx change");
+    const cur = this.leaf().node;                 // leaf before exit
+    if (userInput && cur.inquiry) ctx[cur.id] = userInput;
 
-      this.stack = fresh;               // новый путь
-      return;                           //   ↳  leaf уже валиден; ввод
-    }                                   //     обработаем в СЛЕДУЮЩЕМ advance
+    /* 1. run onExit of the current leaf */
+    const leafFrame = this.stack.pop()!;
+    if (leafFrame.entered) await run(cur.onExit, ctx, userInput);
 
-    const leaf = this.node();
-    if (userInput && leaf.inquiry) ctx[leaf.id] = userInput; // save answer
-
-    /* exit current leaf */
-    let childSucceeded = true;
-    let childFrame = this.stack.pop()!;
-    if (childFrame.entered) await run(childFrame.node.onExit, ctx, userInput);
-
-    /* climb until we manage to descend into another leaf */
+    /* 2. bubble results upward until a sibling succeeds             */
     while (this.stack.length) {
       const parent = this.stack[this.stack.length - 1]!;
-      const p = parent.node;
+      const p      = parent.node;
 
-      /* ── SEQUENCE ─────────────────────────────────────────── */
-      if (p.type === "sequence") {
-        if (childSucceeded) {
-          for (let i = parent.index + 1; i < p.children.length; i++) {
-            if (await this.descend(p.children[i]!, i, parent, ctx, userInput))
-              return;
-          }
-        }
-        childSucceeded = false; // propagate failure upward
-      }
+      const nextIdx =
+        p.type === "sequence"
+          ? parent.index + 1                             // next in order
+          : 0;                                           // selector: always restart
 
-      /* ── SELECTOR ─────────────────────────────────────────── */
-      else if (p.type === "selector") {
-        if (childSucceeded) {
-          // selector keeps using the same successful child
-          if (
-            await this.descend(p.children[parent.index]!, parent.index, parent, ctx, userInput)
-          )
-            return;
-          childSucceeded = false; // child is no longer valid
-        }
-        for (let i = parent.index + 1; i < p.children.length; i++) {
-          if (await this.descend(p.children[i]!, i, parent, ctx, userInput))
-            return;
-        }
-        childSucceeded = false;
-      }
+      const ok = await this.descendUntilLeaf(
+        p, nextIdx, parent, ctx, userInput
+      );
+      if (ok) return;                                   // found next leaf
 
-      /* exhaustion: close this composite & pop */
+      /* parent failed – run its onExit and pop up one level */
       if (parent.entered) await run(p.onExit, ctx, userInput);
       this.stack.pop();
     }
 
-    if (this.stack.length === 0 && childFrame) {
-      this.stack.push(childFrame);           // keep conversation on the last leaf
-    }
+    /* 3. nothing left ⇒ stay on the last processed leaf            */
+    this.stack.push(leafFrame);
   }
 
-  /* descend into the first leaf of subtree — return true if success */
-  private async descend(
-    node: BTNode,
-    childIdx: number,
+  /* ---------- private helpers ------------------------------------ */
+
+  /** depth‑first search for first valid leaf starting with child[i] */
+  private async descendUntilLeaf(
+    parent: BTNode,
+    startIdx: number,
     parentFrame: Frame,
     ctx: any,
-    txt: string,
+    txt: string
   ): Promise<boolean> {
-    /* conditions on the edge into this child */
-    if (!(await pass(node.conditions, ctx))) return false;
+    if (parent.type === "leaf") return true;            // shouldn’t happen
 
-    /* push the child frame */
-    const frame: Frame = { node, index: 0, entered: false };
-    this.stack.push(frame);
-    await run(node.onEnter, ctx, txt);
-    frame.entered = true;
-    parentFrame.index = childIdx;
+    for (let i = startIdx; i < parent.children.length; i++) {
+      const child = parent.children[i]!;
+      if (!(await pass(child.conditions, ctx))) continue;
 
-    /* leaf? great – success */
-    if (node.type === "leaf") return true;
+      // push child frame & fire onEnter
+      const f: Frame = { node: child, index: 0, entered: false };
+      this.stack.push(f);
+      await run(child.onEnter, ctx, txt);
+      f.entered = true;
+      parentFrame.index = i;
 
-    /* composite: find first valid grand-child */
-    for (let i = 0; i < node.children.length; i++) {
-      if (
-        await this.descend(node.children[i]!, i, frame, ctx, txt)
-      )
-        return true;
+      if (child.type === "leaf") return true;           // reached leaf
+
+      // recurse into composites
+      if (await this.descendUntilLeaf(child, 0, f, ctx, txt)) return true;
+
+      // entire subtree failed – onExit + pop & continue loop
+      await run(child.onExit, ctx, txt);
+      this.stack.pop();
     }
-
-    /* all grandchildren invalid – composite fails → unwind & pop */
-    await run(node.onExit, ctx, txt);
-    this.stack.pop();
-    return false;
+    return false;                                      // parent fails
   }
 
-  /* build initial root→leaf stack; return null if no path exists */
-  private async pathToLeaf(
+  /** DFS helper to build a path root→leaf (optional `wantLeafId`)   */
+  private async path(
     node: BTNode,
     ctx: any,
-    want = "",
+    want = ""
   ): Promise<Frame[] | null> {
     if (!(await pass(node.conditions, ctx))) return null;
 
@@ -162,20 +130,16 @@ export class FlowEngine {
     }
 
     for (let i = 0; i < node.children.length; i++) {
-      const tail = await this.pathToLeaf(node.children[i]!, ctx, want);
+      const tail = await this.path(node.children[i]!, ctx, want);
       if (tail) return [{ node, index: i, entered: false }, ...tail];
     }
     return null;
   }
 
-  private async isPathStillValid(ctx: any): Promise<boolean> {
-    for (let i = 0; i < this.stack.length; i++) {
-      const frame = this.stack[i]!;
-      const ok = await pass(frame.node.conditions, ctx);
-      if (!ok) return false;
-    }
+  private leaf()            { return this.stack[this.stack.length - 1]!; }
+  private async pathValid(ctx: any) {
+    for (const f of this.stack)
+      if (!(await pass(f.node.conditions, ctx))) return false;
     return true;
   }
 }
-
-

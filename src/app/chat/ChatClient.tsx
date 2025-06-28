@@ -24,7 +24,7 @@ export default function ChatClient({
 }) {
 
   // --- hook ---
-  const { msgs, buttons, step, flushNext } = useChat(start, { name: guestName }, guestId);
+  const { msgs, buttons, step, flushNext, busy } = useChat(start, { name: guestName }, guestId);
 
   // --- Strict‑mode‑safe kick‑off ---
   const boot = useRef(false);
@@ -83,12 +83,13 @@ export default function ChatClient({
 
       </main>
       <div className="footer-panel space-y-2 px-4">
-        <QuickReplies options={buttons} onPick={step} />
+        <QuickReplies options={buttons} onPick={step} disabled={busy} />
 
         <MessageInput
           placeholder="Ваш ответ…"
           onSend={step}
           attachButton={false}
+          disabled={busy}
           className="tg-input"
         />
       </div>
