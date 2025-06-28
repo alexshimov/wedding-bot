@@ -19,5 +19,6 @@ export { default as contacts } from "./contacts";
 export { default as fun_fact } from "./fun_fact";
 export { default as idle } from "./menu";
 export { default as unknown } from "./unknown";
+export { default as transfer } from "./transfer";
 
 

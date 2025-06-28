@@ -119,7 +119,7 @@ export const flow: Record<string, ChatNode> = {
     concierge: { img: "/img/peep-19.svg", },
     useGPT: true,
     inquiry: true,
-    allowedIntents:[INTENTS.dietary_choice],
+    allowedIntents: [INTENTS.dietary_choice],
     buttons: ["🥩 Мясо", "🐟 Рыба"]
   },
   diet_ok: {
@@ -278,6 +278,23 @@ export const flow: Record<string, ChatNode> = {
     useGPT: false,
     buttons: ["Подарки", "Пожелание", "Дресс-код"],
   },
+  transfer: {
+    id: "transfer",
+    tag: "transfer",
+    template: prompts.transfer,
+    useGPT: false,
+    info: {
+      img: "/img/route.png",
+      title: "Как добраться до Lifehack Village",
+      body: [
+        "📍 Адрес: Пушкинский район, **пгт Зеленоградский, ул. Ватутина 17**",
+        "🚗 На авто: Ярославское шоссе (М-8) → **Зеленоградский (≈1 ч от Москвы)**",
+        "🚕 Такси/каршер: просто введи адрес **«Зеленоградский, Ватутина 17»**",
+        "📲 Возникли вопросы? Пиши организатору **Анне**: **+7 (963) 508-42-00**"
+      ]
+    },
+    buttons: ["Понятно"],
+  },
 };
 
 /* ------------------------------------------------------------------ */
@@ -350,7 +367,7 @@ import { updateGuest } from "./sheets";
 export const saveAnswer = (field: string): Action =>
   async (ctx, lastInput) => {
     if (ctx.lastUserInput && ctx.rowNumber) {
-      console.log('saveAnswer', field, ctx.lastUserInput )
+      console.log('saveAnswer', field, ctx.lastUserInput)
       ctx[field] = ctx.lastUserInput;
       await updateGuest(ctx.rowNumber, field, ctx.lastUserInput);
     }
@@ -370,9 +387,9 @@ export const appendAnswer = (field: string): Action =>
 
 export const pushSlot = (field: string, value: string): Action =>
   async (ctx, lastInput) => {
-    
+
     ctx[field] = value;
-    console.log('pushSlot', field, value,ctx[field] )
+    console.log('pushSlot', field, value, ctx[field])
   };
 
 /* ------------------------------------------------------------------ */
@@ -626,6 +643,11 @@ export const tree: BTNode = {
               id: "contacts",
               type: "leaf",
               conditions: [intent(INTENTS.contacts)],
+            },
+            {
+              id: "transfer",
+              type: "leaf",
+              conditions: [intent(INTENTS.route)],
             },
             {
               id: "wish_sequence",
