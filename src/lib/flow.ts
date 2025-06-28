@@ -409,11 +409,6 @@ export const tree: BTNode = {
       type: "sequence",
       conditions: [isIntroNotComplete()],
       children: [
-        {
-          id: "video_bonus",
-          type: "leaf",
-          conditions: [once("video_bonus")]
-        },
         { id: "greeting", type: "leaf", conditions: [once("greeting")], },
         { id: "concierge_intro", type: "leaf", conditions: [once("concierge_intro")], },
         {

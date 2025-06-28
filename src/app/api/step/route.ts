@@ -11,6 +11,7 @@ console.log("PEM header in prod:", (process.env.GSA_PRIVATE_KEY ?? "").slice(0, 
 export async function POST(req: Request) {
   const body = await req.json();                           // { id?, state, input }
   const guestId = body.id;                                 // id from query string
+  console.log(body)
   if (!cache) {
     const list = await loadGuests();
     cache = Object.fromEntries(list.map((g) => [g.id, g]));
