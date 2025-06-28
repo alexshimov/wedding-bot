@@ -154,6 +154,12 @@ export const flow: Record<string, ChatNode> = {
     },
     buttons: ["👍 Понятно, продолжаем"]
   },
+  alcohol: {
+    id: "alcohol",
+    template: prompts.alcohol,
+    useGPT: true,
+    buttons: ["👌 Принято, Кузя!"]
+  },
   fun_fact_offer: {
     id: "fun_fact_offer",
     template: "Хочешь услышать забавный факт о нас?",
@@ -377,6 +383,11 @@ export const tree: BTNode = {
               type: "leaf",
               conditions: [once("gifts")],
             },
+            {
+              id: "alcohol",
+              type: "leaf",
+              conditions: [once("alcohol")],
+            },
           ],
         },
       ]
@@ -386,7 +397,7 @@ export const tree: BTNode = {
       type: "sequence",
       children: [
         {
-          id: "gifts",
+          id: "alcohol",
           type: "leaf"
         },
         {

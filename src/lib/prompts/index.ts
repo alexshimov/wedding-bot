@@ -11,3 +11,4 @@ export { default as diet_other } from "./diet_other";
 export { default as greeting_repeat } from "./greeting_repeat";
 export { default as dress_code } from "./dress_code";
 export { default as gifts } from "./gifts";
+export { default as alcohol } from "./alcohol";
