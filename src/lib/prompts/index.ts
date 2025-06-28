@@ -18,4 +18,6 @@ export { default as wish_response } from "./wish_response";
 export { default as contacts } from "./contacts";
 export { default as fun_fact } from "./fun_fact";
 export { default as idle } from "./menu";
+export { default as unknown } from "./unknown";
+
 

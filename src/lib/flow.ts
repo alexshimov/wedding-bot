@@ -2,6 +2,10 @@
 /* 1.  Chat-node definition  (unchanged – keeps all the existing UI   */
 /*     fields so renderNode.ts keeps working)                         */
 /* ------------------------------------------------------------------ */
+import * as prompts from "./prompts";
+import { INTENTS, Intent } from "@/lib/intent";
+import { FACTS_TOTAL } from "./funFacts";   // ← добавьте строку наверху
+
 export interface ChatNode {
   id: string;
   template: string | string[];
@@ -12,14 +16,13 @@ export interface ChatNode {
   auto?: boolean;          // kept for backward-compat but no longer used
   delayMs?: number;
   inquiry?: boolean;
+  allowedIntents?: Intent[],
   concierge?: { img: string };
   useGPT?: boolean;
   video?: { id: string, caption: string }
 }
 
-import * as prompts from "./prompts";
-import { INTENTS } from "@/lib/intent";
-import { FACTS_TOTAL } from "./funFacts";   // ← добавьте строку наверху
+
 
 /* the original linear map of leaves – **unchanged** ---------------- */
 export const flow: Record<string, ChatNode> = {
@@ -112,6 +115,8 @@ export const flow: Record<string, ChatNode> = {
     tag: "diet_ask",
     concierge: { img: "/img/peep-19.svg", },
     useGPT: true,
+    inquiry: true,
+    allowedIntents:[INTENTS.dietary_choice],
     buttons: ["🥩 Мясо", "🐟 Рыба"]
   },
   diet_ok: {
@@ -253,6 +258,13 @@ export const flow: Record<string, ChatNode> = {
     useGPT: false,
     buttons: ["Подарки", "Пожелание", "Дресс-код"],
   },
+  unknown: {
+    id: "unknown",
+    tag: "unknown",
+    template: prompts.unknown,
+    useGPT: false,
+    buttons: ["Подарки", "Пожелание", "Дресс-код"],
+  },
 };
 
 /* ------------------------------------------------------------------ */
@@ -298,9 +310,21 @@ export const slotNotFilled = (slot: string): Condition => (ctx) => {
   return Boolean(!ctx[slot]);
 }
 
-export const intent = (tag: string): Condition => (ctx) => {
-  return Boolean(ctx.intent === tag);
-}
+export const intent = (
+  first: string,
+  ...rest: string[]          // любое число доп. тегов
+): Condition => {
+  const tags = [first, ...rest];
+  return (ctx) => tags.includes(ctx.intent);
+};
+
+export const intentWithLast = (
+  first: string,
+  ...rest: string[]          // любое число доп. тегов
+): Condition => {
+  const tags = [first, ...rest];
+  return (ctx) => (tags.includes(ctx.last_intent) || tags.includes(ctx.intent));
+};
 
 export const typing = (ms: number): Action => async () =>
   new Promise((r) => setTimeout(r, ms));
@@ -446,12 +470,12 @@ export const tree: BTNode = {
                 {
                   id: "wish",
                   type: "leaf",
-                  onEnter: [appendAnswer("wish")],
                   conditions: [once("wish")]
                 },
                 {
                   id: "wish_response",
                   type: "leaf",
+                  onEnter: [appendAnswer("wish")],
                   conditions: [once("wish_response")]
                 },
               ]
@@ -502,83 +526,138 @@ export const tree: BTNode = {
       type: "sequence",
       children: [
         {
-          id: "wish_sequence",
-          type: "sequence",
-          children: [
-            {
-              id: "wish",
-              type: "leaf",
-              onEnter: [appendAnswer("wish")]
-            },
-            {
-              id: "wish_response",
-              type: "leaf"
-            },
-          ]
-        },
-        {
           id: "greeting_repeat",
           type: "leaf",
           conditions: [once("greeting"), once("greeting_repeat")]
         },
         {
-          id: "fun_fact_selector",
+          id: "idle_menu",
+          type: "leaf",
+          conditions: [once("idle_menu")]
+        },
+        {
+          id: "menu_selector",
           type: "selector",
           children: [
             {
-              id: "fun_fact_sequence",
+              id: "eventInfo_selector",
               type: "sequence",
-              conditions: [
-                /* факты ещё есть */
-                (ctx) => (ctx.funFactsUsed?.length ?? 0) < FACTS_TOTAL
-              ],
+              conditions: [intent(INTENTS.venue, INTENTS.time)],
               children: [
                 {
-                  id: "fun_fact",
+                  id: "eventInfo_overnight",
                   type: "leaf",
-                  conditions: [once("fun_fact")]
+                  conditions: [isStayingOvernight("eventInfo_overnight")]
                 },
                 {
-                  id: "fun_fact_random",
+                  id: "eventInfo_ceremony",
                   type: "leaf",
+                  conditions: [isNotStayingOvernight("eventInfo_ceremony")]
                 }
+              ],
+            },
+            {
+              id: "schedule",
+              type: "leaf",
+              conditions: [intent(INTENTS.schedule)]
+            },
+            {
+              id: "dress_code",
+              type: "leaf",
+              conditions: [intent(INTENTS.dresscode)],
+            },
+            {
+              id: "idle_menu",
+              type: "leaf",
+              conditions: [intent(INTENTS.continue, INTENTS.yes, INTENTS.no)],
+            },
+            {
+              id: "video_bonus",
+              type: "leaf",
+              conditions: [intent(INTENTS.video)],
+            },
+            {
+              id: "gifts",
+              type: "leaf",
+              conditions: [intent(INTENTS.gifts)],
+            },
+            {
+              id: "alcohol",
+              type: "leaf",
+              conditions: [intent(INTENTS.alcohol)],
+            },
+            {
+              id: "diet_selector",
+              type: "sequence",
+              conditions: [intent(INTENTS.dietary_choice)],
+              children: [
+                {
+                  id: "diet_ask",
+                  type: "leaf"
+                },
+                {
+                  id: "diet_ok",
+                  type: "leaf",
+                  onEnter: [saveAnswer("diet_ask")]
+                },
+              ],
+            },
+            {
+              id: "contacts",
+              type: "leaf",
+              conditions: [intent(INTENTS.contacts)],
+            },
+            {
+              id: "wish_sequence",
+              type: "sequence",
+              conditions: [intentWithLast(INTENTS.wish)],
+              children: [
+                {
+                  id: "wish",
+                  type: "leaf"
+                },
+                {
+                  id: "wish_response",
+                  type: "leaf",
+                  onEnter: [appendAnswer("wish")]
+                },
               ]
             },
-            { id: "fun_fact_empty", type: "leaf" }
-          ]
-        },
-        {
-          id: "video_bonus",
-          type: "leaf"
-        },
-        {
-          id: "contacts",
-          type: "leaf"
-        },
-        {
-          id: "wish_sequence",
-          type: "sequence",
-          children: [
             {
-              id: "wish",
+              id: "fun_fact_selector",
+              type: "selector",
+              conditions: [intent(INTENTS.fun_fact)],
+              children: [
+                {
+                  id: "fun_fact_sequence",
+                  type: "sequence",
+                  conditions: [
+                    /* факты ещё есть */
+                    (ctx) => (ctx.funFactsUsed?.length ?? 0) < FACTS_TOTAL
+                  ],
+                  children: [
+                    {
+                      id: "fun_fact",
+                      type: "leaf",
+                      conditions: [once("fun_fact")]
+                    },
+                    {
+                      id: "fun_fact_random",
+                      type: "leaf",
+                    }
+                  ]
+                },
+                { id: "fun_fact_empty", type: "leaf" }
+              ]
+            },
+            {
+              id: "unknown",
               type: "leaf",
-              onEnter: [appendAnswer("wish")]
-            },
-            {
-              id: "wish_response",
-              type: "leaf"
+              conditions: [],
             },
           ]
-        },
-        {
-          id: "schedule",
-          type: "leaf"
-        },
-
-        {
-          id: "fun_fact_offer",
-          type: "leaf"
-        }]
+        }
+      ]
     }
   ],
 };

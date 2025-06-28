@@ -30,8 +30,6 @@ export function useChat(start: string, ctx: any, guestId: string) {
     timer.current = setTimeout(() => {
       setMsgs(m => m.filter(x => x.type !== "typing"));
       next();
-      // вдруг очередь уже пуста:
-      maybeUnlock();
     }, TYPING_MS);
   }, [maybeUnlock]);
 
@@ -51,6 +49,9 @@ export function useChat(start: string, ctx: any, guestId: string) {
     } else if (q.current.length) {
       /* info / event — сразу ставим typing-плейсхолдер */
       showTypingThen(playNext);
+    } else {
+      /* non‑text bubble и это был последний в очереди */
+      maybeUnlock();        // <- снимем busy аккуратно
     }
   }, [showTypingThen]);
 
@@ -62,14 +63,22 @@ export function useChat(start: string, ctx: any, guestId: string) {
 
   /* ---------- кладём элементы и, если idle, стартуем ---------- */
   const enqueue = (list: ChatMsg[]) => {
+    if (!list.length) return;
+
+    const wasIdle = q.current.length === 0; // очередь была пуста?
     q.current.push(...list);
-    if (q.current.length === list.length) playNext(); // очередь была пуста
+
+    if (wasIdle) {
+      /* Вместо мгновенного показа первой реплики
+         сперва показываем «typing», а потом playNext() */
+      showTypingThen(playNext);
+    } else if (q.current.length === list.length) playNext(); // очередь была пуста
   };
 
   /* ---------- основной step() ---------- */
   async function step(input: string) {
     if (busy) return;
-    setBusy(true); 
+    setBusy(true);
 
     if (input.trim())
       setMsgs(m => [...m, withId({ role: "guest", type: "text", text: input.trim() })]);

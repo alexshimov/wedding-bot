@@ -43,7 +43,8 @@ export async function POST(req: Request) {
       b => b.toLowerCase() === body.input.trim().toLowerCase()
     );
 
-    const tag = await detectIntent(body.input);
+    guest.last_intent = guest.intent;
+    const tag = await detectIntent(body.input, node.allowedIntents);
     guest.intent = tag;
     console.log("Intent: " + tag)
 
