@@ -12,3 +12,5 @@ export { default as greeting_repeat } from "./greeting_repeat";
 export { default as dress_code } from "./dress_code";
 export { default as gifts } from "./gifts";
 export { default as alcohol } from "./alcohol";
+export { default as schedule } from "./schedule";
+

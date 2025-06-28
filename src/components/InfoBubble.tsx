@@ -1,11 +1,11 @@
 "use client";
 import { Message } from "@chatscope/chat-ui-kit-react";
 import { motion } from "framer-motion";
-import Image from "next/image";
+import InfoList from "./InfoList";   
 import { ChatMsg } from "@/lib/types";
 import { useRef, useEffect } from "react";
-import ReactMarkdown from "react-markdown";
-import rehypeSanitize from "rehype-sanitize";
+import NextImage from "next/image";
+
 
 /**
  * Информационная карточка, отображаемая прямо внутри стандартного «пузыря».
@@ -14,7 +14,23 @@ import rehypeSanitize from "rehype-sanitize";
 export default function InfoBubble({ card }: { card: Extract<ChatMsg, { type: "info" }> }) {
 
   const ref = useRef<HTMLDivElement | null>(null);
-  useEffect(() => { ref.current?.scrollIntoView({ behavior: "auto" }); }, []);
+
+  /* ————— единый помощник: докручиваем нижнюю грань элемента ———— */
+  const scrollSelf = () =>
+    ref.current?.scrollIntoView({ block: "end", behavior: "auto" });
+
+  /* 1️⃣  первый рендер + любые изменения размеров внутри карточки  */
+  useEffect(() => {
+    scrollSelf(); // сразу после монтирования
+
+    const el = ref.current;
+    if (!el) return;
+
+    const ro = new ResizeObserver(scrollSelf); // отслеживаем изменение высоты
+    ro.observe(el);
+
+    return () => ro.disconnect();
+  }, []);
 
   return (
     <motion.div
@@ -25,23 +41,22 @@ export default function InfoBubble({ card }: { card: Extract<ChatMsg, { type: "i
     >
     <Message
       model={{ direction: "incoming", position: "single" }}
-      className="max-w-[80%]"
+      className="max-w-[90%]"
     >
       <Message.CustomContent>
         <div className="info-card">
           {card.img && (
-            <Image
+            <NextImage
               src={card.img}
               alt=""
               width={400}
               height={200}
               className="w-full rounded-lg mb-2 object-cover"
+              onLoadingComplete={scrollSelf}
             />
           )}
           {card.title && <h3 className="info-head">{card.title}</h3>}
-          {card.body?.map((line, i) => (
-            <div key={i}><ReactMarkdown rehypePlugins={[rehypeSanitize]}>{line}</ReactMarkdown></div>
-          ))}
+          {card.body && <InfoList lines={card.body} />}
           {card.link && (
             <a
               href={card.link}

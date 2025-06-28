@@ -296,7 +296,7 @@ html::before{
 
 .info-card{
   position:relative;
-  padding:1.25rem 0rem 1.25rem 1.75rem;   /* +0.5rem слева под полоску */
+  padding:1.25rem 0.5rem 0.5rem 1.25rem;   /* +0.5rem слева под полоску */
   background:#2b2e36;
   border-radius:1rem;
   box-shadow:inset 0 0 0 1px rgba(255,255,255,.03),
@@ -309,6 +309,31 @@ html::before{
 .info-head{
   font:600 1.05rem/1.3 Inter,system-ui,sans-serif;
   margin-bottom:.6rem;
+}
+
+/* базовые настройки списка */
+.tg-list{
+  @apply list-none m-0 p-0 text-[15px] leading-[1.5];
+}
+
+.tg-list li{
+  display:grid;
+  grid-template-columns:auto 1fr;   /* «метка» + «текст» */
+  column-gap:.5rem;
+  margin-bottom:.4rem;
+}
+
+/* режим расписания */
+.tg-list li.schedule .time{
+  font-variant-numeric: tabular-nums;
+  font-weight:500;
+  white-space:nowrap;
+}
+
+/* режим обычного пункта (plain) — никакой точки, однородная колонка */
+.tg-list li.plain{
+  grid-template-columns:1fr;     /* только текст */
+  column-gap:0;
 }
 
 /* Вертикальная полоса-акцент */
@@ -324,7 +349,7 @@ html::before{
 
 /* Картинка (если есть) «уходит» под полоску */
  .info-card > img:first-child{
-  margin-left:-1.75rem;
+  margin-left:-1.25rem;
   margin-top:-1.25rem;
   width:calc(100% + 1.75rem);
   max-width:calc(100% + 1.75rem);
