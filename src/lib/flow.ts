@@ -38,6 +38,14 @@ export const flow: Record<string, ChatNode> = {
     buttons: ["Поехали"],
     useGPT: true
   },
+  greeting_repeat: {
+    id: "greeting_repeat",
+    tag: "greeting_repeat",
+    concierge: { img: "/img/peep-17.svg", },                   // <-- новое поле
+    template: prompts.greeting_repeat,
+    buttons: ["Поехали"],
+    useGPT: true
+  },
   eventInfo_overnight: {
     id: "eventInfo_overnight",
     template: prompts.eventInfo_overnight,
@@ -213,6 +221,10 @@ export type BTNode =
 export const once = (tag: string): Condition => (ctx) =>
   !(ctx.seen?.includes?.(tag));
 
+export const isIntroNotComplete = (): Condition => (ctx) => {
+  return !Boolean(ctx.story_complete);
+}
+
 export const isStayingOvernight = (tag: string): Condition => (ctx) =>
   Boolean(ctx.stays);
 
@@ -223,7 +235,6 @@ export const slotFilled = (slot: string): Condition => (ctx) =>
   Boolean(ctx[slot]);
 
 export const slotNotFilled = (slot: string): Condition => (ctx) => {
-  console.log('slotNotFilled', ctx[slot])
   return Boolean(!ctx[slot]);
 }
 
@@ -240,9 +251,13 @@ export const saveAnswer = (field: string): Action =>
   async (ctx, lastInput) => {
     if (ctx.lastUserInput && ctx.rowNumber) {
       ctx[field] = ctx.lastUserInput;
-      console.log('saveAnswer',  ctx[field], '-', ctx.lastUserInput)
       await updateGuest(ctx.rowNumber, field, ctx.lastUserInput);
     }
+  };
+
+export const pushSlot = (field: string, value: string): Action =>
+  async (ctx, lastInput) => {
+    ctx[field] = value;
   };
 
 /* ------------------------------------------------------------------ */
@@ -251,91 +266,104 @@ export const saveAnswer = (field: string): Action =>
 /* ------------------------------------------------------------------ */
 export const tree: BTNode = {
   id: "root",
-  type: "sequence",
+  type: "selector",
   children: [
-    { id: "greeting", type: "leaf", conditions: [once("greeting")], },
-    { id: "concierge_intro", type: "leaf", conditions: [once("concierge_intro")], },
     {
-      id: "eventInfo_selector",
+      id: "story",
       type: "sequence",
+      conditions: [isIntroNotComplete()],
       children: [
+        { id: "greeting", type: "leaf", conditions: [once("greeting")], },
+        { id: "concierge_intro", type: "leaf", conditions: [once("concierge_intro")], },
         {
-          id: "eventInfo_overnight",
-          type: "leaf",
-          conditions: [isStayingOvernight("eventInfo_overnight"), once("eventInfo")]
+          id: "eventInfo_selector",
+          type: "sequence",
+          children: [
+            {
+              id: "eventInfo_overnight",
+              type: "leaf",
+              conditions: [isStayingOvernight("eventInfo_overnight"), once("eventInfo")]
+            },
+            {
+              id: "eventInfo_ceremony",
+              type: "leaf",
+              conditions: [isNotStayingOvernight("eventInfo_ceremony"), once("eventInfo")]
+            }
+          ],
         },
         {
-          id: "eventInfo_ceremony",
-          type: "leaf",
-          conditions: [isNotStayingOvernight("eventInfo_ceremony"), once("eventInfo")]
-        }
-      ],
-    },
-    {
-      id: "main",
-      type: "sequence",
-      children: [
-        {
-          id: "rsvp_block",
+          id: "main",
           type: "sequence",
-          conditions: [slotNotFilled("rsvp_ask")],
           children: [
-            { id: "rsvp_ask", type: "leaf", conditions: [once("rsvp_ask")] },
             {
-              id: "rsvp_selector",
+              id: "rsvp_block",
+              type: "sequence",
+              conditions: [slotNotFilled("rsvp")],
+              children: [
+                { id: "rsvp_ask", type: "leaf", conditions: [once("rsvp_ask")] },
+                {
+                  id: "rsvp_selector",
+                  type: "selector",
+                  children: [
+                    {
+                      id: "rsvp_yes",
+                      type: "leaf",
+                      conditions: [intent(INTENTS.yes)],
+                      onEnter: [saveAnswer('rsvp_ask'), pushSlot('rsvp', 'complete')]
+                    },
+                    {
+                      id: "rsvp_no",
+                      type: "leaf",
+                      conditions: [intent(INTENTS.no)],
+                    },
+                    {
+                      id: "rsvp_other",
+                      type: "leaf",
+                      onExit: [],
+                    },
+                  ],
+                }
+              ]
+            },
+            {
+              id: "diet_selector",
               type: "selector",
+              conditions: [slotNotFilled("diet")],
               children: [
                 {
-                  id: "rsvp_yes",
+                  id: "diet_ask",
                   type: "leaf",
-                  conditions: [intent(INTENTS.yes)],
-                  onEnter: [saveAnswer('rsvp_ask')]
+                  conditions: [once("diet_ask")],
                 },
                 {
-                  id: "rsvp_no",
+                  id: "diet_ok",
                   type: "leaf",
-                  conditions: [intent(INTENTS.no)],
+                  conditions: [intent(INTENTS.dietary_choice)],
+                  onEnter: [saveAnswer("diet_ask"), saveAnswer('story_complete'), pushSlot('diet', 'complete')]
                 },
                 {
-                  id: "rsvp_other",
-                  type: "leaf",
-                  onExit: [],
+                  id: "diet_other",
+                  type: "leaf"
                 },
               ],
             }
-          ]
-        },
-        {
-          id: "diet_selector",
-          type: "selector",
-          conditions: [slotNotFilled("diet_ask")],
-          children: [
-            {
-              id: "diet_ask",
-              type: "leaf",
-              conditions: [once("diet_ask")],
-            },
-            {
-              id: "diet_ok",
-              type: "leaf",
-              conditions: [intent(INTENTS.dietary_choice)],
-              onEnter: [saveAnswer("diet_ask")]
-            },
-            {
-              id: "diet_other",
-              type: "leaf"
-            },
           ],
         },
-
-        { id: "fun_fact_offer", type: "leaf" },
-        {
-          id: "fun_fact",
-          type: "leaf",
-          onEnter: [typing(1500)],
-        },
-        { id: "closing", type: "leaf" },
-      ],
+      ]
     },
+    {
+      id: "freeform",
+      type: "sequence",
+      children: [
+        {
+          id: "greeting_repeat",
+          type: "leaf",
+          conditions: [once("greeting"), once("greeting_repeat")]
+        },
+        {
+          id: "fun_fact_offer",
+          type: "leaf"
+        }]
+    }
   ],
 };

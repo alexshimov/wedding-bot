@@ -3,8 +3,8 @@ import { JWT }    from "google-auth-library";
 
 const SCOPES = ["https://www.googleapis.com/auth/spreadsheets"];
 const SHEET_ID = process.env.SHEET_ID!;          // put in .env.local
-const HEADER_RANGE = "Guests!A1:Z1";
-const DATA_RANGE    = "Guests!A2:H";                  // id | name | stays | diet | rsvp | wish | …
+const HEADER_RANGE = "Guests!A1:I";
+const DATA_RANGE    = "Guests!A2:I";                  // id | name | stays | diet | rsvp | wish | …
 
 let headerIndex: Record<string, number> | null = null;
 
@@ -35,7 +35,7 @@ export async function loadGuests() {
     spreadsheetId: SHEET_ID,
     range: DATA_RANGE,
   });
-
+  console.log(data.values[1])
   return (data.values ?? []).map((row, i) => ({
     id:     row[ headers.id    ],
     name:   row[ headers.name  ],
@@ -44,6 +44,7 @@ export async function loadGuests() {
     rsvp_ask:   row[ headers.rsvp_ask  ] ?? "",
     wish:   row[ headers.wish  ] ?? "",
     intro:  row[ headers.intro ] ?? "",
+    story_complete:  row[ headers.story_complete] ? row[ headers.story_complete] !== "" : false,
     rowNumber: 2 + i,
   }));
 }
