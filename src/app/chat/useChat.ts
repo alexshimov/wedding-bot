@@ -6,7 +6,7 @@ const withId = <T extends Partial<ChatMsg>>(m: T): ChatMsg =>
 
 const TYPING_MS = 900;
 
-export function useChat(start: string, ctx: any, guestId: string) {
+export function useChat(start: string, ctx: any, guestId: string, sid: string) {
   const [msgs, setMsgs] = useState<ChatMsg[]>([]);
   const [buttons, setButtons] = useState<string[]>([]);
   const [state, setState] = useState(start);
@@ -89,7 +89,7 @@ export function useChat(start: string, ctx: any, guestId: string) {
     const res = await fetch("/api/step", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: guestId, state, input, ctx }),
+      body: JSON.stringify({ id: guestId, state, input, ctx, sid }),
     }).then(r => r.json());
 
     if (res.messages.length === 0) setBusy(false);

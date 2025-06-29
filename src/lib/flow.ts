@@ -338,12 +338,12 @@ export const isNotStayingOvernight = (tag: string): Condition => (ctx) =>
   !Boolean(ctx.stays);
 
 export const slotFilled = (slot: string): Condition => (ctx) => {
-  console.log('slotFilled', slot, ctx[slot], Boolean(ctx[slot]))
+  //console.log('slotFilled', ctx.id, slot, ctx[slot], Boolean(ctx[slot]))
   return Boolean(ctx[slot]);
 }
 
 export const slotNotFilled = (slot: string): Condition => (ctx) => {
-  console.log('slotNotFilled', slot, ctx[slot], Boolean(!ctx[slot]))
+  //console.log('slotNotFilled', ctx.id, slot, ctx[slot], Boolean(!ctx[slot]))
   return Boolean(!ctx[slot]);
 }
 
@@ -371,7 +371,7 @@ import { updateGuest } from "./sheets";
 export const saveAnswer = (field: string): Action =>
   async (ctx, lastInput) => {
     if (ctx.lastUserInput && ctx.rowNumber) {
-      console.log('saveAnswer', field, ctx.lastUserInput)
+      //console.log('saveAnswer', field, ctx.lastUserInput)
       ctx[field] = ctx.lastUserInput;
       await updateGuest(ctx.rowNumber, field, ctx.lastUserInput);
     }
@@ -393,7 +393,7 @@ export const pushSlot = (field: string, value: string): Action =>
   async (ctx, lastInput) => {
 
     ctx[field] = value;
-    console.log('pushSlot', field, value, ctx[field])
+    console.log('pushSlot', ctx.id, field, value, ctx[field])
   };
 
 /* ------------------------------------------------------------------ */

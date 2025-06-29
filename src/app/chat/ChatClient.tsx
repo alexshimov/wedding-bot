@@ -25,8 +25,10 @@ export default function ChatClient({
   start: string;
 }) {
 
+  const sid = useRef<string>(crypto.randomUUID()).current;
+
   // --- hook ---
-  const { msgs, buttons, step, flushNext, busy } = useChat(start, { name: guestName }, guestId);
+  const { msgs, buttons, step, flushNext, busy } = useChat(start, { name: guestName }, guestId, sid);
 
   // --- Strict‑mode‑safe kick‑off ---
   const boot = useRef(false);

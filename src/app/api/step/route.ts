@@ -12,8 +12,11 @@ import { getGuest, saveGuest }   from "@/lib/kvGuests";
 
 export async function POST(req: Request) {
   const body = await req.json();                           // { id?, state, input }
-  const guestId = body.id;                                 // id from query string
-  const guest = await getGuest(guestId);
+  const guestId = body.id;     
+  const sid = body.sid;                            // id from query string
+  const guest = await getGuest(guestId, sid);
+  
+
   // console.log(body)
   // if (!cache) {
   //   const list = await loadGuests();
@@ -35,14 +38,14 @@ export async function POST(req: Request) {
     });
   }
 
-  const isFirstHit = body.state === "greeting" && (body.input ?? "").trim() === "";
-  if (isFirstHit) {
-    guest.seen = [];
-    guest.states = [];
-    guest.intent = '';
-    guest.last_intent = '';
-    console.log('RELOAD', guestId)
-  }
+  // const isFirstHit = body.state === "greeting" && (body.input ?? "").trim() === "";
+  // if (isFirstHit) {
+  //   guest.seen = [];
+  //   guest.states = [];
+  //   guest.intent = '';
+  //   guest.last_intent = '';
+  //   console.log('RELOAD', guestId)
+  // }
 
   if (body.input.trim()) {                           // гость что-то ввёл
     const node = flow[body.state];      // узел, который видит клиент
