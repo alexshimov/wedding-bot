@@ -41,7 +41,7 @@ export async function POST(req: Request) {
     guest.states = [];
     guest.intent = '';
     guest.last_intent = '';
-    console.log('RELOAD')
+    console.log('RELOAD', guestId)
   }
 
   if (body.input.trim()) {                           // гость что-то ввёл
@@ -53,7 +53,7 @@ export async function POST(req: Request) {
     guest.last_intent = guest.intent;
     const tag = await detectIntent(body.input, node.allowedIntents);
     guest.intent = tag;
-    console.log("Intent: " + tag)
+    console.log("Intent: " + tag, guestId)
 
     // if (tag !== "unknown" && flow[nodeId]) {                         // 1) узнали тег
     //   const nodeId = INTENTS[tag];
