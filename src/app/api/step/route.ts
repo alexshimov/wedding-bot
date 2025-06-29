@@ -1,30 +1,26 @@
 // src/app/api/step/route.ts
-import { loadGuests, updateGuest } from "@/lib/sheets";
+import { loadGuests } from "@/lib/sheets";
 import { runFlow, answerUnknown } from "@/lib/runNodeServer";
 import { detectIntent, INTENTS } from "@/lib/intent";
 import { flow } from "@/lib/flow";
+import { updateGuest } from "@/lib/sheets";
+import { getGuest, saveGuest }   from "@/lib/kvGuests";
 
-let cache: Record<string, any> | null = null;
+//let cache: Record<string, any> | null = null;
 
-console.log("PEM header in prod:", (process.env.GSA_PRIVATE_KEY ?? "").slice(0, 60));
+//console.log("PEM header in prod:", (process.env.GSA_PRIVATE_KEY ?? "").slice(0, 60));
 
 export async function POST(req: Request) {
   const body = await req.json();                           // { id?, state, input }
   const guestId = body.id;                                 // id from query string
-  console.log(body)
-  if (!cache) {
-    const list = await loadGuests();
-    cache = Object.fromEntries(list.map((g) => [g.id, g]));
-  }
+  const guest = await getGuest(guestId);
+  // console.log(body)
+  // if (!cache) {
+  //   const list = await loadGuests();
+  //   cache = Object.fromEntries(list.map((g) => [g.id, g]));
+  // }
 
-  const isFirstHit = body.state === "greeting" && (body.input ?? "").trim() === "";
-  if (isFirstHit) {
-    const list = await loadGuests();
-    cache = Object.fromEntries(list.map((g) => [g.id, g]));
-    console.log('RELOAD')
-  }
-
-  const guest = cache[guestId];
+  // const guest = cache[guestId];
 
   if (!guest) {
     return Response.json({
@@ -37,6 +33,15 @@ export async function POST(req: Request) {
         },
       ],
     });
+  }
+
+  const isFirstHit = body.state === "greeting" && (body.input ?? "").trim() === "";
+  if (isFirstHit) {
+    guest.seen = [];
+    guest.states = [];
+    guest.intent = '';
+    guest.last_intent = '';
+    console.log('RELOAD')
   }
 
   if (body.input.trim()) {                           // гость что-то ввёл
@@ -80,6 +85,6 @@ export async function POST(req: Request) {
 
   /* run normal flow with ctx = guest */
   const res = await runFlow(body.state, body.input, guest);
-
+  await saveGuest(guest);          // <── persist back to KV
   return Response.json(res);
 }

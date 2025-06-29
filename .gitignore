@@ -42,3 +42,5 @@ Thumbs.db              # Windows
 # ───────────────────────────
 docker-compose.override.yml
 *.local.yml
+.vercel
+.env*.local
