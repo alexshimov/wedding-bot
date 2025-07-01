@@ -35,6 +35,7 @@ export async function renderNode(node: ChatNode, ctx: any, userText: string) {
     
     const out: any[] = [{ role: "bot", type: "text", text: compiled }];
     if (node.info) out.push({ role: "bot", type: "info", ...node.info });
+    if (node.event) out.push({ role: "bot", type: "event", ...node.event });
 
     if (node.video) {
       out.push({

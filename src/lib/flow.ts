@@ -11,7 +11,7 @@ export interface ChatNode {
   template: string | string[];
   tag?: string;
   buttons?: string[];
-  info?: { title?: string; body?: string[]; link?: string, img: string };
+  info?: { title?: string; body?: string[]; link?: string, img?: string };
   event?: { img: string; checkIn: string; checkOut: string, ceremony: string, address: string, mapLink: string, overnight: Boolean };
   auto?: boolean;          // kept for backward-compat but no longer used
   delayMs?: number;
@@ -51,6 +51,22 @@ export const flow: Record<string, ChatNode> = {
     buttons: ["Поехали"],
     useGPT: true
   },
+  eventInfo: {
+    id: "eventInfo",
+    template: prompts.eventInfo,
+    tag: "eventInfo",
+    useGPT: false,
+    event: {
+      img: "/img/village-01.png",
+      checkIn: "22 июля (вт), 17:00",
+      checkOut: "",
+      ceremony: "23 июля (ср), 16:00",
+      overnight: true,
+      address: "Пушкинский район, поселок городского типа «Зеленоградский», ул.Ватутина 17",
+      mapLink: "https://yandex.eu/maps/-/CHg5MRZF",
+    },
+    buttons: ["Продолжай"]
+  },
   eventInfo_overnight: {
     id: "eventInfo_overnight",
     template: prompts.eventInfo_overnight,
@@ -89,7 +105,7 @@ export const flow: Record<string, ChatNode> = {
     concierge: { img: "/img/peep-18.svg", },
     tag: "rsvp_ask",
     useGPT: true,
-    buttons: ["✅ Конечно, да", "❌ Нет (лучше не нажимать!)"]
+    buttons: ["🌳 Оба дня", "🥂 Только на церемонию", "❌ Нет (лучше не нажимать!)"]
   },
   rsvp_yes: {
     id: "rsvp_yes",
@@ -98,29 +114,36 @@ export const flow: Record<string, ChatNode> = {
     useGPT: true,
     buttons: ["👉 Едем дальше!"]
   },
+  rsvp_yes_only_ceremony: {
+    id: "rsvp_yes_only_ceremony",
+    tag: "rsvp_yes",
+    template: prompts.rsvp_yes_only_ceremony,
+    useGPT: true,
+    buttons: ["👉 Едем дальше!"]
+  },
   rsvp_no: {
     id: "rsvp_no",
     tag: "rsvp_no",
     template: prompts.rsvp_no,
     useGPT: true,
-    buttons: ["✅ Конечно, да"]
+    buttons: ["🌳 Оба дня", "🥂 Только на церемонию"]
   },
   rsvp_other: {
     id: "rsvp_other",
     tag: "rsvp_other",
     template: prompts.rsvp_other,
     useGPT: true,
-    buttons: ["✅ Конечно, да", "❌ Нет (лучше не нажимать!)"]
+    buttons: ["🌳 Оба дня", "🥂 Только на церемонию"]
   },
   diet_ask: {
     id: "diet_ask",
     template: prompts.diet_ask,
     tag: "diet_ask",
-    concierge: { img: "/img/peep-19.svg", },
+    concierge: { img: "/img/peep-21.svg", },
     useGPT: true,
     inquiry: true,
     allowedIntents: [INTENTS.dietary_choice],
-    buttons: ["🥩 Мясо", "🐟 Рыба"]
+    buttons: ["Нет, продолжай"]
   },
   diet_ok: {
     id: "diet_ok",
@@ -172,6 +195,9 @@ export const flow: Record<string, ChatNode> = {
     id: "alcohol",
     tag: "alcohol",
     template: prompts.alcohol,
+    info: {
+      img: "/img/alcohol.png",
+    },
     useGPT: true,
     buttons: ["👌 Принято, Кузя!"]
   },
@@ -184,13 +210,13 @@ export const flow: Record<string, ChatNode> = {
       img: "/img/schedule-02.png",
       title: "Расписание дня — 23 июля",
       body: [
-        "**13:00** — Сбор гостей, welcome drinks",
-        "**14:00** — Церемония с аркой",
-        "**14:30** — Поздравления и фотосессия",
-        "**15:00** — Фуршет, закуски и общение",
-        "**17:00** — Первый танец и сладкий стол",
-        "**18:00** — Свободное время, танцы, караоке",
-        "**22:00** — Окончание мероприятия"
+        "**15:00** — Сбор гостей, welcome drinks",
+        "**16:00** — Церемония",
+        "**16:30** — Поздравления и фотосессия",
+        "**17:00** — Ужин и общение",
+        "**19:00** — Первый танец и торт",
+        "**20:00** — Свободное время, танцы, караоке",
+        "**21:00** — Окончание мероприятия"
       ]
     },
     buttons: ["👌 Понятно, едем дальше!"]
@@ -240,6 +266,45 @@ export const flow: Record<string, ChatNode> = {
     //   caption: "Короткий ролик с места росписи 🌿",
     // },
     buttons: ["✨ Продолжить"]
+  },
+  flowers: {
+    id: "flowers",
+    tag: "flowers",
+    template: prompts.flowers,
+    useGPT: true,
+    info: {
+      img: "/img/flowers.png",
+    },
+    // video: {
+    //   id: "bg8-z9cNk4s",
+    //   caption: "Короткий ролик с места росписи 🌿",
+    // },
+    buttons: ["👌 Понятно"]
+  },
+  hints: {
+    id: "hints",
+    tag: "hints",
+    template: prompts.hints,
+    useGPT: false,
+    info: {
+      img: "/img/hints.png",
+      title: "Что взять с собой",
+      body: [
+        "🥿 Сменная удобная обувь",
+        "🩴 Тапочки + купальник/плавки",
+        "🦟 Средство от комаров",
+        "🪥 Мини-набор гигиены",
+        "🕶 Солнцезащитные очки и лёгкая панама/шляпа",
+        "👕 Лёгкая кофта или плед",
+        "🧴 Крем SPF 30+",
+        "💊 Личные лекарства",
+      ]
+    },
+    // video: {
+    //   id: "bg8-z9cNk4s",
+    //   caption: "Короткий ролик с места росписи 🌿",
+    // },
+    buttons: ["👌 Понятно"]
   },
   fun_fact: {
     id: "fun_fact",
@@ -411,22 +476,23 @@ export const tree: BTNode = {
       children: [
         { id: "greeting", type: "leaf", conditions: [once("greeting")], },
         { id: "concierge_intro", type: "leaf", conditions: [once("concierge_intro")], },
-        {
-          id: "eventInfo_selector",
-          type: "sequence",
-          children: [
-            {
-              id: "eventInfo_overnight",
-              type: "leaf",
-              conditions: [isStayingOvernight("eventInfo_overnight"), once("eventInfo")]
-            },
-            {
-              id: "eventInfo_ceremony",
-              type: "leaf",
-              conditions: [isNotStayingOvernight("eventInfo_ceremony"), once("eventInfo")]
-            }
-          ],
-        },
+        { id: "eventInfo", type: "leaf", conditions: [once("eventInfo")], },
+        // {
+        //   id: "eventInfo_selector",
+        //   type: "sequence",
+        //   children: [
+        //     {
+        //       id: "eventInfo_overnight",
+        //       type: "leaf",
+        //       conditions: [isStayingOvernight("eventInfo_overnight"), once("eventInfo")]
+        //     },
+        //     {
+        //       id: "eventInfo_ceremony",
+        //       type: "leaf",
+        //       conditions: [isNotStayingOvernight("eventInfo_ceremony"), once("eventInfo")]
+        //     }
+        //   ],
+        // },
         {
           id: "main",
           type: "sequence",
@@ -444,7 +510,13 @@ export const tree: BTNode = {
                     {
                       id: "rsvp_yes",
                       type: "leaf",
-                      conditions: [intent(INTENTS.yes)],
+                      conditions: [intent(INTENTS.both_days)],
+                      onEnter: [saveAnswer('rsvp_ask'), pushSlot('rsvp', 'complete')]
+                    },
+                    {
+                      id: "rsvp_yes_only_ceremony",
+                      type: "leaf",
+                      conditions: [intent(INTENTS.only_ceremony)],
                       onEnter: [saveAnswer('rsvp_ask'), pushSlot('rsvp', 'complete')]
                     },
                     {
@@ -474,12 +546,7 @@ export const tree: BTNode = {
                 {
                   id: "diet_ok",
                   type: "leaf",
-                  conditions: [intent(INTENTS.dietary_choice)],
                   onEnter: [saveAnswer("diet_ask"), pushSlot('diet', 'complete')]
-                },
-                {
-                  id: "diet_other",
-                  type: "leaf"
                 },
               ],
             },
@@ -494,10 +561,16 @@ export const tree: BTNode = {
               conditions: [once("gifts")],
             },
             {
+              id: "flowers",
+              type: "leaf",
+              conditions: [once("flowers")],
+            },
+            {
               id: "alcohol",
               type: "leaf",
               conditions: [once("alcohol")],
             },
+            
             {
               id: "schedule",
               type: "leaf",
@@ -557,6 +630,11 @@ export const tree: BTNode = {
                 { id: "fun_fact_empty", type: "leaf" }
               ]
             },
+            {
+              id: "hints",
+              type: "leaf",
+              conditions: [once("fun_fact")]
+            },
           ],
         },
       ]
@@ -581,21 +659,9 @@ export const tree: BTNode = {
           type: "selector",
           children: [
             {
-              id: "eventInfo_selector",
-              type: "sequence",
-              conditions: [intent(INTENTS.venue, INTENTS.time)],
-              children: [
-                {
-                  id: "eventInfo_overnight",
-                  type: "leaf",
-                  conditions: [isStayingOvernight("eventInfo_overnight")]
-                },
-                {
-                  id: "eventInfo_ceremony",
-                  type: "leaf",
-                  conditions: [isNotStayingOvernight("eventInfo_ceremony")]
-                }
-              ],
+              id: "eventInfo",
+              type: "leaf",
+              conditions: [intent(INTENTS.venue, INTENTS.time)]
             },
             {
               id: "schedule",
@@ -606,6 +672,11 @@ export const tree: BTNode = {
               id: "dress_code",
               type: "leaf",
               conditions: [intent(INTENTS.dresscode)],
+            },
+            {
+              id: "flowers",
+              type: "leaf",
+              conditions: [intent(INTENTS.flowers)],
             },
             {
               id: "idle_menu",
@@ -628,21 +699,26 @@ export const tree: BTNode = {
               conditions: [intent(INTENTS.alcohol)],
             },
             {
-              id: "diet_selector",
-              type: "sequence",
-              conditions: [intent(INTENTS.dietary_choice)],
-              children: [
-                {
-                  id: "diet_ask",
-                  type: "leaf"
-                },
-                {
-                  id: "diet_ok",
-                  type: "leaf",
-                  onEnter: [saveAnswer("diet_ask")]
-                },
-              ],
+              id: "hints",
+              type: "leaf",
+              conditions: [intent(INTENTS.tips)],
             },
+            // {
+            //   id: "diet_selector",
+            //   type: "sequence",
+            //   conditions: [intent(INTENTS.dietary_choice)],
+            //   children: [
+            //     {
+            //       id: "diet_ask",
+            //       type: "leaf"
+            //     },
+            //     {
+            //       id: "diet_ok",
+            //       type: "leaf",
+            //       onEnter: [saveAnswer("diet_ask")]
+            //     },
+            //   ],
+            // },
             {
               id: "contacts",
               type: "leaf",

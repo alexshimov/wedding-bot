@@ -43,7 +43,7 @@ export default function InfoBubble({ card }: { card: Extract<ChatMsg, { type: "i
               <div className="mt-1 text-lg font-large event-head">LIFEHACK VILLAGE</div>
               {card.overnight && (<div className="mt-1">🛏 Заезд:  <strong>{card.checkIn}</strong></div>)}
               <div className="mt-1">💍 Церемония: <strong>{card.ceremony}</strong></div>
-              {card.overnight && (<div className="mt-1">🚗 Выезд: <strong>{card.checkOut}</strong></div>)}
+              {/* {card.overnight && (<div className="mt-1">🚗 Выезд: <strong>{card.checkOut}</strong></div>)} */}
             </div>
 
             {/* адрес */}
