@@ -59,10 +59,10 @@ export const flow: Record<string, ChatNode> = {
     event: {
       img: "/img/village-01.png",
       checkIn: "22 июля (вт), 17:00",
-      checkOut: "",
+      checkOut: "24 июля (чт), 12:00",
       ceremony: "23 июля (ср), 16:00",
       overnight: true,
-      address: "Пушкинский район, поселок городского типа «Зеленоградский», ул.Ватутина 17",
+      address: "МО, Пушкинский район, «Зеленоградский», ул.Ватутина 17",
       mapLink: "https://yandex.eu/maps/-/CHg5MRZF",
     },
     buttons: ["Продолжай"]
