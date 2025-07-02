@@ -599,6 +599,12 @@ export const tree: BTNode = {
               conditions: [once("contacts")]
             },
             {
+              id: "hints",
+              type: "leaf",
+              conditions: [once("hints")],
+              
+            },
+            {
               id: "video_bonus",
               type: "leaf",
               conditions: [once("video_bonus")]
@@ -623,17 +629,12 @@ export const tree: BTNode = {
                     {
                       id: "fun_fact_first",
                       type: "leaf",
+                      onEnter: [saveAnswer("story_complete")],
                     }
                   ]
                 },
                 { id: "fun_fact_empty", type: "leaf" }
               ]
-            },
-            {
-              id: "hints",
-              type: "leaf",
-              conditions: [once("hints")],
-              onEnter: [saveAnswer("story_complete")],
             },
           ],
         },
