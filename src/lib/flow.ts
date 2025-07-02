@@ -623,7 +623,6 @@ export const tree: BTNode = {
                     },
                     {
                       id: "fun_fact_first",
-                      onEnter: [saveAnswer("story_complete")],
                       type: "leaf",
                     }
                   ]
@@ -634,7 +633,8 @@ export const tree: BTNode = {
             {
               id: "hints",
               type: "leaf",
-              conditions: [once("fun_fact")]
+              conditions: [once("hints")],
+              onEnter: [saveAnswer("story_complete")],
             },
           ],
         },
